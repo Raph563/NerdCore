@@ -8,6 +8,12 @@ The format follows Keep a Changelog and semantic versioning.
 
 - No entries yet.
 
+## [1.2.1-alpha.17] - 2026-02-14
+
+### Fixed
+- Update checker now compares prerelease versions with strict semver-like rules, fixing cases where `alpha.9` could be treated as newer than `alpha.15`.
+- GitHub release list is now explicitly sorted by parsed version (then publish date fallback) before selecting the latest release.
+
 ## [1.2.1-alpha.16] - 2026-02-14
 
 ### Changed

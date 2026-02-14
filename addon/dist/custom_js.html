@@ -7941,7 +7941,30 @@
     if (!leftPre && rightPre) return 1;
     if (leftPre && !rightPre) return -1;
     if (!leftPre && !rightPre) return 0;
-    return leftPre.localeCompare(rightPre, undefined, { sensitivity: 'base', numeric: true });
+    const splitPre = (valueInput = '') => clean(valueInput || '')
+      .split(/[.-]/)
+      .map((item) => clean(item))
+      .filter(Boolean);
+    const leftIds = splitPre(leftPre);
+    const rightIds = splitPre(rightPre);
+    const maxLen = Math.max(leftIds.length, rightIds.length);
+    for (let i = 0; i < maxLen; i += 1) {
+      const leftId = leftIds[i];
+      const rightId = rightIds[i];
+      if (leftId === undefined && rightId === undefined) return 0;
+      if (leftId === undefined) return -1;
+      if (rightId === undefined) return 1;
+      const leftNum = Number.parseInt(leftId, 10);
+      const rightNum = Number.parseInt(rightId, 10);
+      const leftIsNum = /^[0-9]+$/.test(leftId);
+      const rightIsNum = /^[0-9]+$/.test(rightId);
+      if (leftIsNum && rightIsNum && leftNum !== rightNum) return leftNum < rightNum ? -1 : 1;
+      if (leftIsNum && !rightIsNum) return -1;
+      if (!leftIsNum && rightIsNum) return 1;
+      const cmp = leftId.localeCompare(rightId, undefined, { sensitivity: 'base' });
+      if (cmp !== 0) return cmp < 0 ? -1 : 1;
+    }
+    return 0;
   }
 
   function addonUpdateFormatDate(isoInput = '') {
@@ -8231,6 +8254,15 @@
     let list = filtered
       .map((row) => addonUpdateReleasePayloadToInfo(row, repo.repository))
       .filter(Boolean);
+    list = list.sort((left, right) => {
+      const semver = compareAddonSemver(clean(left && left.version ? left.version : ''), clean(right && right.version ? right.version : ''));
+      if (semver !== 0) return semver > 0 ? -1 : 1;
+      const leftDate = new Date(clean(left && left.publishedAt ? left.publishedAt : '')).getTime();
+      const rightDate = new Date(clean(right && right.publishedAt ? right.publishedAt : '')).getTime();
+      const leftTs = Number.isFinite(leftDate) ? leftDate : 0;
+      const rightTs = Number.isFinite(rightDate) ? rightDate : 0;
+      return rightTs - leftTs;
+    });
     if (includePrerelease) {
       list = list.slice(0, ADDON_UPDATE_PRERELEASE_VISIBLE_LIMIT);
     }
