@@ -24857,6 +24857,57 @@
         min-height: 2.2em;
         overflow: hidden;
       }
+      .grocy-barcode-robot-card {
+        margin-top: 0.5rem;
+        border: 1px solid rgba(255,255,255,0.16);
+        border-radius: 0.56rem;
+        background: rgba(255,255,255,0.04);
+        padding: 0.45rem 0.55rem;
+      }
+      .grocy-barcode-robot-card-head {
+        font-size: 0.74rem;
+        color: #9ec2e9;
+        margin-bottom: 0.28rem;
+      }
+      .grocy-barcode-robot-card-body {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.55rem;
+      }
+      .grocy-barcode-robot-card-thumb {
+        width: 3.2rem;
+        height: 3.2rem;
+        border-radius: 0.45rem;
+        border: 1px solid rgba(255,255,255,0.18);
+        object-fit: cover;
+        background: rgba(255,255,255,0.04);
+        flex: 0 0 3.2rem;
+      }
+      .grocy-barcode-robot-card-thumb-empty {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #8ea9c8;
+      }
+      .grocy-barcode-robot-card-meta {
+        min-width: 0;
+      }
+      .grocy-barcode-robot-card-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #e7f0ff;
+        line-height: 1.2;
+        margin-bottom: 0.2rem;
+      }
+      .grocy-barcode-robot-card-code {
+        font-size: 0.76rem;
+        color: #bdd1e8;
+      }
+      .grocy-barcode-robot-card-link {
+        margin-top: 0.18rem;
+        display: inline-block;
+        font-size: 0.75rem;
+      }
       .grocy-product-terminal {
         position: fixed;
         right: 1rem;
@@ -26654,6 +26705,14 @@
     }
     headingStatus.dataset.terminalSource = langText('Code-barres', 'Barcodes');
 
+    let selectedCard = titleWrap.querySelector('#grocy-barcode-header-selected-card');
+    if (!selectedCard) {
+      selectedCard = document.createElement('div');
+      selectedCard.id = 'grocy-barcode-header-selected-card';
+      selectedCard.className = 'grocy-barcode-robot-card d-none';
+      titleWrap.appendChild(selectedCard);
+    }
+
     const setHeadingStatus = (text = '', tone = 'muted', detailsInput = null) => {
       const msg = clean(text);
       if (!msg) {
@@ -26676,6 +26735,7 @@
       actions.classList.toggle('d-none', parentMode || !hasBarcodeTable);
       if (parentMode || !hasBarcodeTable) {
         setHeadingStatus('', 'muted');
+        renderBarcodeRobotSelectionCard(selectedCard, null);
         return;
       }
 
@@ -26743,12 +26803,14 @@
     const runHeaderRobotCreate = async (useFallbackChain = false) => {
         if (isProductParentModeEnabled()) {
           setHeadingStatus(langText('Mode parent actif: section code-barres masquée.', 'Parent mode active: barcode section hidden.'), 'warning');
+          renderBarcodeRobotSelectionCard(selectedCard, null);
           refreshState();
           return;
         }
         const productName = productNameFromMainForm();
         if (!productName) {
           setHeadingStatus(langText('Nom du produit introuvable.', 'Product name not found.'), 'danger');
+          renderBarcodeRobotSelectionCard(selectedCard, null);
           refreshState();
           return;
         }
@@ -26756,6 +26818,7 @@
         const productId = currentEditedProductId();
         if (productId <= 0) {
           setHeadingStatus(t('barcode_header_robot_need_product_id'), 'danger');
+          renderBarcodeRobotSelectionCard(selectedCard, null);
           refreshState();
           return;
         }
@@ -26764,6 +26827,7 @@
         const purchaseUnitName = currentProductPurchaseUnitLabel();
         if (purchaseUnitId <= 0) {
           setHeadingStatus(t('barcode_header_robot_need_unit'), 'danger');
+          renderBarcodeRobotSelectionCard(selectedCard, null);
           refreshState();
           return;
         }
@@ -26771,6 +26835,7 @@
         const settings = normalizeBarcodeLookupSettings(barcodeLookupSettings());
         if (settings.enabled !== true) {
           setHeadingStatus(t('facts_provider_disabled'), 'danger');
+          renderBarcodeRobotSelectionCard(selectedCard, null);
           refreshState();
           return;
         }
@@ -26825,6 +26890,7 @@
             }
           }
           const { best } = lookup;
+          renderBarcodeRobotSelectionCard(selectedCard, barcodeRobotSelectionMeta(best, lookup.lookup));
           usedName = clean(lookup.usedName || '');
           bestName = clean(best && best.name ? best.name : '');
           bestCode = clean(best && best.code ? best.code : '');
@@ -26867,6 +26933,7 @@
         } catch (error) {
           const msg = clean(error && error.message ? error.message : String(error));
           finalError = msg || t('focus_unknown_error');
+          renderBarcodeRobotSelectionCard(selectedCard, null);
           setHeadingStatus(
             t('barcode_header_robot_api_error', { msg: finalError }),
             'danger',
@@ -27109,7 +27176,67 @@
     return {
       code,
       name: offBarcodeCandidateName(best),
+      product: best,
     };
+  }
+
+  function barcodeRobotSelectionMeta(bestInput = null, lookupInput = null) {
+    const best = bestInput && typeof bestInput === 'object' ? bestInput : null;
+    const lookup = lookupInput && typeof lookupInput === 'object' ? lookupInput : null;
+    if (!best) return null;
+    const code = parseBarcodeCandidate(best.code || '');
+    if (!code) return null;
+    const providerId = normalizeBarcodeLookupProvider(lookup && lookup.provider ? lookup.provider : barcodeLookupProviderFromSettings());
+    const providerLabel = barcodeLookupProviderLabel(providerId);
+    const product = best && best.product && typeof best.product === 'object' ? best.product : null;
+    const name = clean(best.name || offBarcodeCandidateName(product) || '');
+    const imageUrl = product ? extractFactsImageUrl(product, providerId) : '';
+    const sourceUrl = makeFactsProductUrl(code, providerId);
+    return {
+      code,
+      name,
+      imageUrl,
+      providerId,
+      providerLabel,
+      sourceUrl,
+    };
+  }
+
+  function renderBarcodeRobotSelectionCard(cardNodeInput = null, metaInput = null) {
+    const cardNode = cardNodeInput && cardNodeInput.nodeType === 1 ? cardNodeInput : null;
+    if (!cardNode) return;
+    const meta = metaInput && typeof metaInput === 'object' ? metaInput : null;
+    if (!meta || !clean(meta.code || '')) {
+      cardNode.innerHTML = '';
+      cardNode.classList.add('d-none');
+      return;
+    }
+    const code = clean(meta.code || '');
+    const name = clean(meta.name || '');
+    const providerLabel = clean(meta.providerLabel || t('default_na'));
+    const imageUrl = clean(meta.imageUrl || '');
+    const sourceUrl = clean(meta.sourceUrl || '');
+    const sourceLabel = langText('Produit sélectionné', 'Selected product');
+    const codeLabel = langText('Code', 'Barcode');
+    const openLabel = langText('Ouvrir sur la source', 'Open on source');
+    const thumbHtml = imageUrl
+      ? `<img class="grocy-barcode-robot-card-thumb" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name || code)}" loading="lazy" referrerpolicy="no-referrer">`
+      : `<div class="grocy-barcode-robot-card-thumb grocy-barcode-robot-card-thumb-empty"><i class="fa-solid fa-image"></i></div>`;
+    const openHtml = sourceUrl
+      ? `<a class="grocy-barcode-robot-card-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(openLabel)}</a>`
+      : '';
+    cardNode.innerHTML = `
+      <div class="grocy-barcode-robot-card-head">${escapeHtml(sourceLabel)}: ${escapeHtml(providerLabel)}</div>
+      <div class="grocy-barcode-robot-card-body">
+        ${thumbHtml}
+        <div class="grocy-barcode-robot-card-meta">
+          <div class="grocy-barcode-robot-card-name">${escapeHtml(name || t('default_na'))}</div>
+          <div class="grocy-barcode-robot-card-code">${escapeHtml(codeLabel)}: <strong>${escapeHtml(code)}</strong></div>
+          ${openHtml}
+        </div>
+      </div>
+    `;
+    cardNode.classList.remove('d-none');
   }
 
   function barcodeFormProductName(form) {
@@ -27210,6 +27337,10 @@
     const firstFormGroup = form.querySelector('.form-group');
     if (firstFormGroup) firstFormGroup.appendChild(status);
 
+    const selectedCard = document.createElement('div');
+    selectedCard.className = 'grocy-barcode-robot-card d-none';
+    if (firstFormGroup) firstFormGroup.appendChild(selectedCard);
+
     const refreshAssistToggleUi = () => {
       const settings = normalizeBarcodeAutofillUiSettings(barcodeAutofillUiSettings());
       const enabled = settings.instantAssist === true;
@@ -27242,12 +27373,14 @@
     const runRobotLookup = async (autoRun = false, useFallbackChain = false) => {
       if (isProductParentModeEnabled()) {
         setBarcodeAutofillStatus(status, langText('Mode parent actif: robot code-barres masqué.', 'Parent mode active: barcode robot hidden.'), 'warning');
+        renderBarcodeRobotSelectionCard(selectedCard, null);
         refreshState();
         return;
       }
       const productName = barcodeFormProductName(form);
       if (!productName) {
         setBarcodeAutofillStatus(status, langText('Nom du produit introuvable.', 'Product name not found.'), 'danger');
+        renderBarcodeRobotSelectionCard(selectedCard, null);
         refreshState();
         return;
       }
@@ -27255,6 +27388,7 @@
       const settings = normalizeBarcodeLookupSettings(barcodeLookupSettings());
       if (settings.enabled !== true) {
         setBarcodeAutofillStatus(status, t('facts_provider_disabled'), 'warning');
+        renderBarcodeRobotSelectionCard(selectedCard, null);
         refreshState();
         return;
       }
@@ -27320,6 +27454,7 @@
           : bestBarcodeLookupMatch(lookup.products, productName);
         usedName = clean(lookup.usedName || '');
         if (!best) {
+          renderBarcodeRobotSelectionCard(selectedCard, null);
           const attempted = Array.isArray(lookup.attemptedProviders) && lookup.attemptedProviders.length > 0
             ? lookup.attemptedProviders.map((providerId) => barcodeLookupProviderLabel(providerId)).join(' -> ')
             : lookup.providerLabel;
@@ -27331,6 +27466,7 @@
           );
           return;
         }
+        renderBarcodeRobotSelectionCard(selectedCard, barcodeRobotSelectionMeta(best, lookup));
 
         barcodeInput.value = best.code;
         barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -27352,6 +27488,7 @@
       } catch (error) {
         const msg = clean(error && error.message ? error.message : String(error));
         finalError = msg || langText('erreur inconnue', 'unknown error');
+        renderBarcodeRobotSelectionCard(selectedCard, null);
         setBarcodeAutofillStatus(
           status,
           langText(`Erreur API code-barres: ${finalError}.`, `Barcode API error: ${finalError}.`),

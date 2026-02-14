@@ -23,6 +23,7 @@ The format follows Keep a Changelog and semantic versioning.
 ### Fixed
 - Barcode robots now auto-retry with simplified product names when standard lookup fails, without showing a separate retry button.
 - Parent source checkbox persistence now writes only checked state (`1`) and no longer writes unchecked (`0`) automatically.
+- Barcode robots now show a selected product info card (OFF/OPF source, product name, barcode, preview image, source link) before barcode creation.
 
 ## [1.2.0] - 2026-02-14
 
