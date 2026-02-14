@@ -1,6 +1,8 @@
 param(
   [Parameter(Mandatory = $true)]
   [string]$Version,
+  [ValidateSet('alpha', 'beta', 'stable')]
+  [string]$Channel = 'alpha',
   [switch]$NoPush,
   [switch]$CreateGithubRelease,
   [switch]$Prerelease
@@ -8,11 +10,43 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-if ($Version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$') {
-  throw "Invalid version format: $Version"
+if ($Version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
+  throw "Invalid version format: $Version (expected X.Y.Z)"
 }
 
-$tag = "v$Version"
+if ($Prerelease -and $Channel -eq 'stable') {
+  $Channel = 'alpha'
+}
+
+function Get-NextPrereleaseTag {
+  param(
+    [string]$BaseVersion,
+    [ValidateSet('alpha', 'beta')]
+    [string]$PreChannel
+  )
+
+  $prefix = "v$BaseVersion-$PreChannel."
+  $pattern = "^v$([regex]::Escape($BaseVersion))-$PreChannel\.(\d+)$"
+  $max = 0
+  $tags = git tag --list "$prefix*"
+  foreach ($tag in $tags) {
+    $text = [string]$tag
+    if ($text -match $pattern) {
+      $n = [int]$matches[1]
+      if ($n -gt $max) {
+        $max = $n
+      }
+    }
+  }
+  return "$prefix$($max + 1)"
+}
+
+$tag = if ($Channel -eq 'stable') {
+  "v$Version"
+} else {
+  Get-NextPrereleaseTag -BaseVersion $Version -PreChannel $Channel
+}
+
 $dirty = git status --porcelain
 if (-not [string]::IsNullOrWhiteSpace($dirty)) {
   throw 'Working tree is not clean. Commit or stash changes before releasing.'
@@ -38,11 +72,11 @@ if ($CreateGithubRelease) {
   }
 
   $args = @('release', 'create', $tag, '--generate-notes')
-  if ($Prerelease) {
+  if ($Channel -ne 'stable' -or $Prerelease) {
     $args += '--prerelease'
   }
 
   & gh @args
 }
 
-Write-Host "Release tag prepared: $tag"
+Write-Host "Release tag prepared: $tag (channel: $Channel)"

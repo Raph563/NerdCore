@@ -4,6 +4,22 @@ All notable changes to this repository are documented in this file.
 
 The format follows Keep a Changelog and semantic versioning.
 
+## [Unreleased] - 2026-02-14
+
+### Changed
+- Project naming introduced: **Donne Atlas**.
+- Documentation restructured and split into FR/EN versions with cross-links.
+- Removed machine-specific path examples from GitHub-facing docs.
+- Release tooling now supports channels:
+  - `alpha` (default)
+  - `beta`
+  - `stable`
+- Release scripts now generate prerelease tags automatically for alpha/beta:
+  - `vX.Y.Z-alpha.N`
+  - `vX.Y.Z-beta.N`
+- GitHub workflow release validation now compares `addon/VERSION` with the base tag version.
+- GitHub workflow now marks alpha/beta tags as prereleases automatically.
+
 ## [1.2.0] - 2026-02-14
 
 ### Added

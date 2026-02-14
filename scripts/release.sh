@@ -2,19 +2,40 @@
 set -eu
 
 if [ $# -lt 1 ]; then
-  echo "Usage: ./scripts/release.sh <version> [--no-push] [--gh-release] [--prerelease]"
+  echo "Usage: ./scripts/release.sh <version> [--channel alpha|beta|stable] [--no-push] [--gh-release] [--prerelease]"
   exit 1
 fi
 
 VERSION="$1"
 shift || true
 
+CHANNEL="alpha"
 NO_PUSH=0
 GH_RELEASE=0
 PRERELEASE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --channel)
+      CHANNEL="${2:-}"
+      shift 2
+      ;;
+    --channel=*)
+      CHANNEL="${1#*=}"
+      shift
+      ;;
+    --alpha)
+      CHANNEL="alpha"
+      shift
+      ;;
+    --beta)
+      CHANNEL="beta"
+      shift
+      ;;
+    --stable)
+      CHANNEL="stable"
+      shift
+      ;;
     --no-push)
       NO_PUSH=1
       ;;
@@ -23,6 +44,9 @@ while [ $# -gt 0 ]; do
       ;;
     --prerelease)
       PRERELEASE=1
+      if [ "$CHANNEL" = "stable" ]; then
+        CHANNEL="alpha"
+      fi
       ;;
     *)
       echo "Unknown flag: $1"
@@ -32,12 +56,41 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$'; then
-  echo "Invalid version format: $VERSION"
+if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  echo "Invalid version format: $VERSION (expected X.Y.Z)"
   exit 1
 fi
 
-TAG="v$VERSION"
+case "$CHANNEL" in
+  alpha|beta|stable)
+    ;;
+  *)
+    echo "Invalid channel: $CHANNEL (expected alpha, beta, or stable)"
+    exit 1
+    ;;
+esac
+
+next_prerelease_tag() {
+  base_version="$1"
+  pre_channel="$2"
+  prefix="v${base_version}-${pre_channel}."
+  max=0
+  for tag in $(git tag --list "${prefix}*"); do
+    n="${tag#"$prefix"}"
+    if printf '%s' "$n" | grep -Eq '^[0-9]+$'; then
+      if [ "$n" -gt "$max" ]; then
+        max="$n"
+      fi
+    fi
+  done
+  echo "${prefix}$((max + 1))"
+}
+
+if [ "$CHANNEL" = "stable" ]; then
+  TAG="v$VERSION"
+else
+  TAG="$(next_prerelease_tag "$VERSION" "$CHANNEL")"
+fi
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "Working tree is not clean. Commit or stash changes before releasing."
@@ -63,11 +116,11 @@ if [ "$GH_RELEASE" -eq 1 ]; then
     exit 1
   fi
 
-  if [ "$PRERELEASE" -eq 1 ]; then
+  if [ "$CHANNEL" != "stable" ] || [ "$PRERELEASE" -eq 1 ]; then
     gh release create "$TAG" --generate-notes --prerelease
   else
     gh release create "$TAG" --generate-notes
   fi
 fi
 
-echo "Release tag prepared: $TAG"
+echo "Release tag prepared: $TAG (channel: $CHANNEL)"

@@ -19,11 +19,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_FULL="${GITHUB_REF_NAME#v}"
+          TAG_VERSION="${TAG_FULL%%-*}"
           FILE_VERSION="$(tr -d '\r\n' < addon/VERSION)"
           if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then
-            echo "Tag version ($TAG_VERSION) does not match addon/VERSION ($FILE_VERSION)"
+            echo "Tag version base ($TAG_VERSION) does not match addon/VERSION ($FILE_VERSION)"
             exit 1
+          fi
+
+          if printf '%s' "$TAG_FULL" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta)\.[0-9]+$'; then
+            echo "IS_PRERELEASE=true" >> "$GITHUB_ENV"
+          else
+            echo "IS_PRERELEASE=false" >> "$GITHUB_ENV"
           fi
 
       - name: Build release archive
@@ -39,4 +46,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
           files: ${{ env.ARCHIVE }}
