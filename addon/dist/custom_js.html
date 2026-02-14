@@ -8047,9 +8047,27 @@
   function addonUpdateCandidateStateFileUrls() {
     const pathname = clean(window.location && window.location.pathname ? window.location.pathname : '');
     const baseCandidates = ['data/grocy-addon-state.json', '/data/grocy-addon-state.json', 'grocy-addon-state.json'];
-    if (!pathname) return baseCandidates;
+    const apiCandidates = [];
+    try {
+      if (typeof U === 'function') {
+        const fromGroup = clean(U('/api/files/data/') || '');
+        if (fromGroup) {
+          apiCandidates.push(`${fromGroup}${encodeURIComponent('grocy-addon-state.json')}`);
+        }
+        const fromFull = clean(U('/api/files/data/grocy-addon-state.json') || '');
+        if (fromFull) {
+          apiCandidates.push(fromFull);
+        }
+      }
+    } catch (_err) {
+      // Ignore URL helper issues and use plain candidates.
+    }
+    apiCandidates.push('/api/files/data/grocy-addon-state.json');
+    apiCandidates.push('/api/files/data/' + encodeURIComponent('grocy-addon-state.json'));
+    if (!pathname) return Array.from(new Set([...apiCandidates, ...baseCandidates]));
     const basePath = pathname.replace(/\/[^/]*$/, '/');
     return Array.from(new Set([
+      ...apiCandidates,
       `${basePath}data/grocy-addon-state.json`,
       `${basePath}grocy-addon-state.json`,
       ...baseCandidates,
