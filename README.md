@@ -1,37 +1,48 @@
 # Grocy Custom Addon Pack (Raph563)
 
-This repository packages a custom Grocy frontend addon and release-ready installer tooling.
+This repository packages a custom Grocy frontend addon, local install/update scripts, and release automation.
 
 > Not affiliated with the official Grocy project.
 
-## What Is Versioned
+## Start Here
 
-- `addon/dist/custom_js.html`: main addon payload.
-- `addon/scripts/*`: install, uninstall, and export scripts (PowerShell + shell).
-- `addon/docker-sidecar/*`: sidecar image and compose example.
-- `config/*`: deploy config files and templates needed for reproducible setup.
-- Documentation and release automation.
+- Beginner guide (very detailed): `docs/NOOB_GUIDE.md`
+- Addon pack guide: `addon/README.md`
+- Release flow: `RELEASING.md`
+- Changelog: `CHANGELOG.md`
 
-## What Is Intentionally NOT Versioned
+## What This Repo Contains
 
-- Database (`config/data/grocy.db`)
-- Personal files and media (`config/data/storage/`)
-- Runtime cache (`config/data/viewcache/`)
-- Logs (`config/log/`)
-- Local keys and certs (`config/keys/`)
-- Local runtime config (`config/data/config.php`)
+- `addon/dist/custom_js.html`: main addon payload injected into Grocy.
+- `addon/scripts/*`: install, uninstall, export, and GitHub update scripts.
+- `addon/docker-sidecar/*`: Docker sidecar installer.
+- `config/*`: tracked deployment config/template files.
+- `scripts/*`: release helper scripts.
+- `.github/workflows/release.yml`: GitHub release pipeline.
 
-## Main Addon Capabilities
+## What Is Intentionally Not Versioned
+
+- `config/data/grocy.db`
+- `config/data/storage/`
+- `config/data/viewcache/`
+- `config/log/`
+- `config/keys/`
+- `config/data/config.php`
+
+## Core Addon Features
 
 - Stock analytics dashboard (KPIs, charts, rankings, focused overlays).
-- Guided compatibility setup for recommended product custom fields.
+- Guided addon compatibility setup:
+  - product groups
+  - user entities
+  - user fields
+  - auto-detection + mapping of similar existing fields
 - Quantity conversion helpers with API/fallback logic.
-- AI-assisted analysis tools with multiple provider profiles.
-- Product form UX improvements and advanced stock insights.
+- AI-assisted analysis tools with multi-provider profiles.
+- Product form UX improvements and stock insights.
+- Addon update section in settings (GitHub release version check + local update commands).
 
-## Quick Start
-
-### Option A: Local script install
+## Quick Install (Local)
 
 Windows:
 
@@ -48,14 +59,30 @@ chmod +x install.sh
 ./install.sh /path/to/grocy/config
 ```
 
-### Option B: Docker sidecar install
+## Update Local Grocy From GitHub Releases
 
-```bash
-cd addon/docker-sidecar
-docker compose -f docker-compose.example.yml run --rm grocy-addon
+Windows:
+
+```powershell
+cd addon\scripts
+.\update-from-github.ps1 -Repository "Raph563/Grocy" -GrocyConfigPath "C:\path\to\grocy\config"
 ```
 
-## Keep `dist` Synced From Local Grocy
+Linux/macOS:
+
+```bash
+cd addon/scripts
+chmod +x update-from-github.sh
+./update-from-github.sh --repository "Raph563/Grocy" --config /path/to/grocy/config
+```
+
+Notes:
+
+- Without explicit config path, scripts auto-try `../config`.
+- A backup of `config/data/custom_js.html` is created by default.
+- The update writes `config/data/grocy-addon-state.json`.
+
+## Keep Repo Dist Synced From Local Grocy
 
 Windows:
 
@@ -71,24 +98,20 @@ cd addon/scripts
 ./export-from-local.sh ../../config
 ```
 
-## Releases
+## Release Model
 
 - Version file: `addon/VERSION`
+- Runtime version constant in addon: `ADDON_RUNTIME_VERSION` inside `addon/dist/custom_js.html`
 - Changelog: `CHANGELOG.md`
-- Release process: `RELEASING.md`
-- Automated publishing: `.github/workflows/release.yml` (triggered by tag `v*`)
+- Release flow: `RELEASING.md`
+- Automated publishing: `.github/workflows/release.yml` (tag pattern `v*`)
 
-Each tagged release publishes a zip asset with the addon pack.
+Each release publishes `grocy-addon-vX.Y.Z.zip`.
 
-## Repository Structure
+## Repository Layout
 
-- `addon/` distributable addon pack.
-- `config/` deployment config and local template files.
-- `scripts/` release helper scripts.
-- `.github/workflows/` CI/release automation.
-
-## Maintainer Notes
-
-- Keep runtime/personal data out of Git.
-- Update `addon/VERSION` and `CHANGELOG.md` together before tagging.
-- Use `scripts/release.ps1` or `scripts/release.sh` for consistent releases.
+- `addon/`: distributable addon pack.
+- `config/`: deployment config and templates.
+- `docs/`: human guides (including noob guide).
+- `scripts/`: release helper scripts.
+- `.github/workflows/`: CI/release automation.

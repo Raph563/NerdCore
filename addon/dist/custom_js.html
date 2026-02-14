@@ -144,6 +144,11 @@
     productStatusEntries: [],
     addonCompatState: null,
     addonCompatApplying: false,
+    addonCompatScan: null,
+    addonCompatScanPromise: null,
+    addonCompatMappingResolve: null,
+    addonUpdateState: null,
+    addonUpdateChecking: false,
   };
 
   const CHART_IDS = [
@@ -707,6 +712,9 @@
   const QTY_CONVERSION_OVERRIDE_KEY = 'grocy_dash_qty_conversion_overrides_v1';
   const UI_STATE_STORAGE_KEY = 'grocy_dash_ui_state_v1';
   const ADDON_COMPATIBILITY_KEY = 'grocy_dash_addon_compatibility_v1';
+  const ADDON_UPDATE_KEY = 'grocy_dash_addon_update_v1';
+  const ADDON_RUNTIME_VERSION = '1.2.0';
+  const ADDON_UPDATE_DEFAULT_REPOSITORY = 'Raph563/Grocy';
   const BARCODE_LOOKUP_PROVIDER_IDS = ['openfoodfacts', 'openproductsfacts'];
   const PHOTO_SEARCH_ENGINE_IDS = ['google', 'duckduckgo', 'bing'];
   const BRAND_LOGO_SOURCES = [
@@ -716,8 +724,42 @@
     { id: 'duckduckgo' },
     { id: 'logodev' },
   ];
-  const ADDON_COMPAT_REQUIRED_PRODUCT_USERFIELDS = [
+  const ADDON_COMPAT_REQUIRED_PRODUCT_GROUPS = [
     {
+      name: 'Médicaments',
+      descriptionFr: '',
+      descriptionEn: '',
+      active: 1,
+    },
+    {
+      name: 'Entretien & maison',
+      descriptionFr: '',
+      descriptionEn: '',
+      active: 1,
+    },
+    {
+      name: 'Hygiène & soins personnels',
+      descriptionFr: '',
+      descriptionEn: '',
+      active: 1,
+    },
+  ];
+
+  const ADDON_COMPAT_REQUIRED_USERENTITIES = [
+    {
+      name: 'Medicaments',
+      captionFr: 'Médicaments',
+      captionEn: 'Medicines',
+      descriptionFr: '',
+      descriptionEn: '',
+      showInSidebar: 1,
+      iconCssClass: '',
+    },
+  ];
+
+  const ADDON_COMPAT_REQUIRED_USERFIELDS = [
+    {
+      entity: 'products',
       name: 'Marque',
       captionFr: 'Marque',
       captionEn: 'Brand',
@@ -729,6 +771,7 @@
       config: '',
     },
     {
+      entity: 'products',
       name: 'Sous_marque',
       captionFr: 'Sous-marque',
       captionEn: 'Sub-brand',
@@ -740,6 +783,7 @@
       config: '',
     },
     {
+      entity: 'products',
       name: 'origine',
       captionFr: 'Origine',
       captionEn: 'Origin',
@@ -751,6 +795,7 @@
       config: '',
     },
     {
+      entity: 'products',
       name: 'SIQO',
       captionFr: 'Signes Officiels de l\'Origine et de la Qualité (SIQO)',
       captionEn: 'Official Origin and Quality signs (SIQO)',
@@ -762,6 +807,7 @@
       config: '',
     },
     {
+      entity: 'products',
       name: 'parent',
       captionFr: 'parent',
       captionEn: 'parent',
@@ -769,6 +815,174 @@
       showAsColumn: 1,
       sortNumber: 5,
       inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'products',
+      name: 'Dosage',
+      captionFr: 'Dosage',
+      captionEn: 'Dosage',
+      type: 'text-single-line',
+      showAsColumn: 1,
+      sortNumber: 6,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'products',
+      name: 'active_substance',
+      captionFr: 'Substance active',
+      captionEn: 'Active substance',
+      type: 'text-single-line',
+      showAsColumn: 1,
+      sortNumber: 7,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'products',
+      name: 'notice_link',
+      captionFr: 'Lien notice',
+      captionEn: 'Notice link',
+      type: 'link-with-title',
+      showAsColumn: 1,
+      sortNumber: 8,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'products',
+      name: 'Posologie',
+      captionFr: 'Posologie',
+      captionEn: 'Dosage instructions',
+      type: 'text-multi-line',
+      showAsColumn: 1,
+      sortNumber: 9,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'products',
+      name: 'Prescription',
+      captionFr: 'Prescription',
+      captionEn: 'Prescription',
+      type: 'checkbox',
+      showAsColumn: 1,
+      sortNumber: 10,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'products',
+      name: 'Renouvellement',
+      captionFr: 'Renouvellement',
+      captionEn: 'Renewal',
+      type: 'date',
+      showAsColumn: 1,
+      sortNumber: 11,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'products',
+      name: 'Notice_pdf',
+      captionFr: 'Notice',
+      captionEn: 'Notice',
+      type: 'file',
+      showAsColumn: 1,
+      sortNumber: 12,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'userentity:Medicaments',
+      name: 'Produit',
+      captionFr: 'Produit',
+      captionEn: 'Product',
+      type: 'text-single-line',
+      showAsColumn: 1,
+      sortNumber: 1,
+      inputRequired: 1,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'userentity:Medicaments',
+      name: 'Quantite',
+      captionFr: 'Quantité',
+      captionEn: 'Quantity',
+      type: 'number-decimal',
+      showAsColumn: 1,
+      sortNumber: 2,
+      inputRequired: 1,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'userentity:Medicaments',
+      name: 'Unite',
+      captionFr: 'Unité',
+      captionEn: 'Unit',
+      type: 'preset-list',
+      showAsColumn: 1,
+      sortNumber: 3,
+      inputRequired: 1,
+      defaultValue: '',
+      config: 'Comprimé(s)',
+    },
+    {
+      entity: 'userentity:Medicaments',
+      name: 'photo',
+      captionFr: 'Photo',
+      captionEn: 'Photo',
+      type: 'image',
+      showAsColumn: 1,
+      sortNumber: 4,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'userentity:Medicaments',
+      name: 'Molecule',
+      captionFr: 'Molécule',
+      captionEn: 'Molecule',
+      type: 'text-single-line',
+      showAsColumn: 1,
+      sortNumber: 5,
+      inputRequired: 1,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'userentity:Medicaments',
+      name: 'Notice',
+      captionFr: 'Notice',
+      captionEn: 'Notice',
+      type: 'file',
+      showAsColumn: 1,
+      sortNumber: 6,
+      inputRequired: 0,
+      defaultValue: '',
+      config: '',
+    },
+    {
+      entity: 'userentity:Medicaments',
+      name: 'lien',
+      captionFr: 'Lien',
+      captionEn: 'Link',
+      type: 'link-with-title',
+      showAsColumn: 1,
+      sortNumber: 7,
+      inputRequired: 1,
       defaultValue: '',
       config: '',
     },
@@ -1246,18 +1460,57 @@
       settings_section_group_logos: 'Logos de groupes',
       settings_section_addon_compat: 'Compatibilité addon',
       settings_section_saved: 'Section "{{section}}" sauvegardée.',
-      addon_compat_desc: 'Ajoute les attributs personnalisés produits recommandés pour l’addon (hors attributs médicaments et sans toucher à userentity-Medicaments).',
-      addon_compat_scope_note: 'Portée: entity products uniquement. Les groupes produits existants sont conservés.',
+      addon_compat_desc: 'Ajoute les groupes produits, entités utilisateur et attributs utilisés par l’addon.',
+      addon_compat_scope_note: 'Portée: product_groups + userentities + userfields. Détection automatique de l’existant.',
       addon_compat_run_btn: 'Appliquer la compatibilité',
+      addon_compat_map_btn: 'Associer les éléments similaires',
       addon_compat_reoffer_btn: 'Réafficher la proposition au prochain chargement',
-      addon_compat_banner_text: 'Compatibilité addon: applique automatiquement les attributs personnalisés non-médicaments recommandés.',
+      addon_compat_banner_text: 'Compatibilité addon: détecte l’existant, propose les associations, puis crée uniquement ce qui manque.',
       addon_compat_banner_apply: 'Appliquer',
+      addon_compat_banner_map: 'Associer',
       addon_compat_banner_later: 'Plus tard',
+      addon_compat_banner_missing_detail: 'Éléments manquants: {{missing}} | associations proposées: {{mapping}}.',
       addon_compat_status_idle: 'En attente d’exécution.',
       addon_compat_status_running: 'Application de la compatibilité en cours...',
-      addon_compat_status_done: 'Compatibilité appliquée: {{created}} créé(s), {{existing}} déjà présent(s), {{failed}} échec(s).',
+      addon_compat_status_done: 'Compatibilité appliquée: {{created}} créé(s), {{existing}} déjà présent(s), {{mapped}} associé(s), {{failed}} échec(s).',
+      addon_compat_status_ready: 'Compatibilité déjà satisfaisante: aucun ajout nécessaire.',
+      addon_compat_status_mapping_none: 'Aucune association pertinente détectée.',
+      addon_compat_status_mapping_cancelled: 'Association annulée.',
       addon_compat_status_fail: 'Échec compatibilité: {{msg}}',
       addon_compat_status_prompt_reset: 'La proposition sera réaffichée au prochain chargement.',
+      addon_compat_mapping_title: 'Associations de compatibilité',
+      addon_compat_mapping_intro: 'Des éléments proches ont été détectés ({{count}}). Choisis ceux à réutiliser ou laisse \"Créer\".',
+      addon_compat_mapping_close: 'Fermer',
+      addon_compat_mapping_skip: 'Ignorer',
+      addon_compat_mapping_apply: 'Valider',
+      addon_compat_mapping_create: 'Créer "{{name}}"',
+      addon_compat_mapping_similarity: '{{score}} % similaire',
+      settings_section_addon_update: 'Mise à jour addon',
+      addon_update_desc: 'Vérifie la dernière release GitHub et prépare les commandes de mise à jour locale.',
+      addon_update_repo_label: 'Dépôt GitHub (owner/repo)',
+      addon_update_repo_hint: 'Ex: Raph563/Grocy. Le script cible ../config par défaut (Documents/Docker/grocy/config).',
+      addon_update_check_btn: 'Vérifier la version',
+      addon_update_open_release_btn: 'Ouvrir la release',
+      addon_update_open_release_tag: 'Release {{tag}}',
+      addon_update_copy_btn: 'Copier',
+      addon_update_cmd_ps_label: 'Commande Windows PowerShell',
+      addon_update_cmd_sh_label: 'Commande Linux/macOS',
+      addon_update_cmd_hint: 'Les scripts update-from-github téléchargent la release et remplacent config/data/custom_js.html (backup auto).',
+      addon_update_versions_line: 'Version locale: {{local}} | Dernière release: {{remote}} (tag {{tag}}).',
+      addon_update_last_checked: 'Dernière vérification: {{date}}.',
+      addon_update_not_checked: 'Aucune vérification encore.',
+      addon_update_version_unknown: 'inconnue',
+      addon_update_repo_invalid: 'Format dépôt invalide (attendu: owner/repo).',
+      addon_update_status_idle: 'Clique sur "Vérifier la version" pour comparer avec GitHub.',
+      addon_update_status_checking: 'Vérification GitHub en cours...',
+      addon_update_status_up_to_date: 'Addon à jour: version {{version}}.',
+      addon_update_status_update_available: 'Mise à jour disponible: local {{local}} -> {{latest}} ({{tag}}).',
+      addon_update_status_local_ahead: 'Version locale plus récente que la release: local {{local}} / release {{latest}}.',
+      addon_update_status_release_missing: 'Aucune release trouvée sur GitHub.',
+      addon_update_status_release_missing_asset: 'Release {{tag}} détectée mais aucun asset ZIP exploitable.',
+      addon_update_status_error: 'Échec vérification mise à jour: {{msg}}',
+      addon_update_copy_ok: 'Commande copiée.',
+      addon_update_copy_fail: 'Copie impossible: sélectionne la commande manuellement.',
       ai_validation_mode_label: 'Mode de validation au clic sur Enregistrer',
       ai_validation_mode_single: 'Agent unique',
       ai_validation_mode_fallback: 'Chaîne fallback',
@@ -1802,18 +2055,57 @@
       settings_section_group_logos: 'Group logos',
       settings_section_addon_compat: 'Addon compatibility',
       settings_section_saved: 'Section "{{section}}" saved.',
-      addon_compat_desc: 'Adds recommended product custom fields for the addon (excluding medicine-only fields and without touching userentity-Medicaments).',
-      addon_compat_scope_note: 'Scope: products entity only. Existing product groups are preserved.',
+      addon_compat_desc: 'Adds product groups, user entities, and fields used by the addon.',
+      addon_compat_scope_note: 'Scope: product_groups + userentities + userfields. Existing items are auto-detected.',
       addon_compat_run_btn: 'Apply compatibility',
+      addon_compat_map_btn: 'Map similar items',
       addon_compat_reoffer_btn: 'Show first-run proposal again',
-      addon_compat_banner_text: 'Addon compatibility: automatically apply recommended non-medicine custom fields.',
+      addon_compat_banner_text: 'Addon compatibility: detect existing items, map similar ones, then create only missing items.',
       addon_compat_banner_apply: 'Apply',
+      addon_compat_banner_map: 'Map',
       addon_compat_banner_later: 'Later',
+      addon_compat_banner_missing_detail: 'Missing items: {{missing}} | mapping suggestions: {{mapping}}.',
       addon_compat_status_idle: 'Waiting to run.',
       addon_compat_status_running: 'Applying compatibility...',
-      addon_compat_status_done: 'Compatibility applied: {{created}} created, {{existing}} already present, {{failed}} failed.',
+      addon_compat_status_done: 'Compatibility applied: {{created}} created, {{existing}} already present, {{mapped}} mapped, {{failed}} failed.',
+      addon_compat_status_ready: 'Compatibility already satisfied: nothing to add.',
+      addon_compat_status_mapping_none: 'No relevant mapping suggestions found.',
+      addon_compat_status_mapping_cancelled: 'Mapping cancelled.',
       addon_compat_status_fail: 'Compatibility failed: {{msg}}',
       addon_compat_status_prompt_reset: 'The proposal will appear again on next load.',
+      addon_compat_mapping_title: 'Compatibility mapping',
+      addon_compat_mapping_intro: 'Similar items were found ({{count}}). Choose what to reuse or keep \"Create\".',
+      addon_compat_mapping_close: 'Close',
+      addon_compat_mapping_skip: 'Skip',
+      addon_compat_mapping_apply: 'Apply',
+      addon_compat_mapping_create: 'Create \"{{name}}\"',
+      addon_compat_mapping_similarity: '{{score}}% match',
+      settings_section_addon_update: 'Addon update',
+      addon_update_desc: 'Checks latest GitHub release and prepares local update commands.',
+      addon_update_repo_label: 'GitHub repository (owner/repo)',
+      addon_update_repo_hint: 'Example: Raph563/Grocy. Script targets ../config by default.',
+      addon_update_check_btn: 'Check version',
+      addon_update_open_release_btn: 'Open release',
+      addon_update_open_release_tag: 'Release {{tag}}',
+      addon_update_copy_btn: 'Copy',
+      addon_update_cmd_ps_label: 'Windows PowerShell command',
+      addon_update_cmd_sh_label: 'Linux/macOS command',
+      addon_update_cmd_hint: 'update-from-github scripts download the release and replace config/data/custom_js.html (auto backup).',
+      addon_update_versions_line: 'Local version: {{local}} | Latest release: {{remote}} (tag {{tag}}).',
+      addon_update_last_checked: 'Last check: {{date}}.',
+      addon_update_not_checked: 'Not checked yet.',
+      addon_update_version_unknown: 'unknown',
+      addon_update_repo_invalid: 'Invalid repository format (expected: owner/repo).',
+      addon_update_status_idle: 'Click "Check version" to compare with GitHub.',
+      addon_update_status_checking: 'Checking GitHub release...',
+      addon_update_status_up_to_date: 'Addon is up to date: version {{version}}.',
+      addon_update_status_update_available: 'Update available: local {{local}} -> {{latest}} ({{tag}}).',
+      addon_update_status_local_ahead: 'Local addon is newer than release: local {{local}} / release {{latest}}.',
+      addon_update_status_release_missing: 'No GitHub release found.',
+      addon_update_status_release_missing_asset: 'Release {{tag}} found but no usable ZIP asset.',
+      addon_update_status_error: 'Update check failed: {{msg}}',
+      addon_update_copy_ok: 'Command copied.',
+      addon_update_copy_fail: 'Copy failed: select command manually.',
       ai_validation_mode_label: 'Validation mode when clicking Save',
       ai_validation_mode_single: 'Single agent',
       ai_validation_mode_fallback: 'Fallback chain',
@@ -4238,6 +4530,7 @@
     setRankingsDetailsExpanded(S.rankingsDetailsExpanded === true);
     syncAiSettingsButton();
     renderAddonCompatibilityBanner();
+    refreshAddonCompatibilityScan({ render: true });
     setDashboardCollapsed(!S.dashboardOpen, { ensureReady: S.dashboardOpen === true });
     scheduleUiStateSave();
 
@@ -6788,6 +7081,26 @@
         font-size: 0.86rem;
         opacity: 0.9;
       }
+      #dash_addon_compat_mapping_modal {
+        position: fixed;
+        inset: 0;
+        z-index: 4100;
+        background: rgba(0,0,0,0.72);
+        padding: 1.1rem;
+        overflow-y: auto;
+      }
+      #dash_addon_compat_mapping_modal .dash-addon-compat-mapping-card {
+        max-width: 860px;
+        margin: 0 auto;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 0.72rem;
+        background: linear-gradient(150deg, rgba(28,34,41,0.98), rgba(22,27,33,0.98));
+        box-shadow: 0 20px 44px rgba(0,0,0,0.38);
+      }
+      #dash_addon_compat_mapping_modal .dash-addon-compat-mapping-card .card-body {
+        max-height: 68vh;
+        overflow-y: auto;
+      }
       #dash_ai_settings_overlay .custom-control.custom-switch {
         position: relative;
         display: flex;
@@ -7143,6 +7456,33 @@
     }
   }
 
+  function addonCompatibilityEmptyMappings() {
+    return {
+      groups: {},
+      userentities: {},
+      userfields: {},
+    };
+  }
+
+  function normalizeAddonCompatibilityMappings(mappingsInput = null) {
+    const raw = mappingsInput && typeof mappingsInput === 'object'
+      ? mappingsInput
+      : addonCompatibilityEmptyMappings();
+    const out = addonCompatibilityEmptyMappings();
+    ['groups', 'userentities', 'userfields'].forEach((category) => {
+      const source = raw[category] && typeof raw[category] === 'object'
+        ? raw[category]
+        : {};
+      Object.entries(source).forEach(([key, value]) => {
+        const keyText = clean(key || '');
+        const valueText = clean(value || '');
+        if (!keyText || !valueText) return;
+        out[category][keyText] = valueText;
+      });
+    });
+    return out;
+  }
+
   function defaultAddonCompatibilityState() {
     return {
       onboardingSeen: false,
@@ -7150,6 +7490,7 @@
       lastRunAt: '',
       lastSummary: '',
       lastError: '',
+      mappings: addonCompatibilityEmptyMappings(),
     };
   }
 
@@ -7163,6 +7504,7 @@
       lastRunAt: clean(state.lastRunAt || ''),
       lastSummary: clean(state.lastSummary || ''),
       lastError: clean(state.lastError || ''),
+      mappings: normalizeAddonCompatibilityMappings(state.mappings),
     };
   }
 
@@ -7210,14 +7552,425 @@
     }
   }
 
+  function normalizeAddonUpdateStatusLevel(valueInput = '') {
+    const value = clean(valueInput || '').toLowerCase();
+    if (value === 'success' || value === 'warning' || value === 'danger' || value === 'info') return value;
+    return 'muted';
+  }
+
+  function addonUpdateRepositoryText(repositoryInput = '') {
+    const raw = clean(repositoryInput || '');
+    if (!raw) return ADDON_UPDATE_DEFAULT_REPOSITORY;
+    let text = raw
+      .replace(/^https?:\/\/github\.com\//i, '')
+      .replace(/\.git$/i, '')
+      .replace(/^\/+|\/+$/g, '');
+    const parts = text.split('/').filter(Boolean);
+    if (parts.length >= 2) {
+      text = `${parts[0]}/${parts[1]}`;
+    }
+    return clean(text || ADDON_UPDATE_DEFAULT_REPOSITORY);
+  }
+
+  function addonUpdateRepositoryParts(repositoryInput = '') {
+    const repository = addonUpdateRepositoryText(repositoryInput || '');
+    const match = repository.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+    if (!match) return null;
+    return {
+      repository: `${match[1]}/${match[2]}`,
+      owner: match[1],
+      name: match[2],
+    };
+  }
+
+  function defaultAddonUpdateState() {
+    return {
+      repository: ADDON_UPDATE_DEFAULT_REPOSITORY,
+      checkedAt: '',
+      latestTag: '',
+      latestVersion: '',
+      releaseUrl: '',
+      assetUrl: '',
+      assetName: '',
+      lastStatus: '',
+      lastStatusLevel: 'muted',
+      lastError: '',
+    };
+  }
+
+  function normalizeAddonUpdateState(stateInput = null) {
+    const state = stateInput && typeof stateInput === 'object'
+      ? stateInput
+      : defaultAddonUpdateState();
+    const repository = addonUpdateRepositoryText(state.repository || ADDON_UPDATE_DEFAULT_REPOSITORY);
+    return {
+      repository,
+      checkedAt: clean(state.checkedAt || ''),
+      latestTag: clean(state.latestTag || ''),
+      latestVersion: clean(state.latestVersion || ''),
+      releaseUrl: clean(state.releaseUrl || ''),
+      assetUrl: clean(state.assetUrl || ''),
+      assetName: clean(state.assetName || ''),
+      lastStatus: clean(state.lastStatus || ''),
+      lastStatusLevel: normalizeAddonUpdateStatusLevel(state.lastStatusLevel || 'muted'),
+      lastError: clean(state.lastError || ''),
+    };
+  }
+
+  function addonUpdateState() {
+    if (!S.addonUpdateState || typeof S.addonUpdateState !== 'object') {
+      S.addonUpdateState = loadAddonUpdateState();
+    }
+    return normalizeAddonUpdateState(S.addonUpdateState);
+  }
+
+  function saveAddonUpdateState(nextInput = {}, optionsInput = {}) {
+    const options = optionsInput && typeof optionsInput === 'object' ? optionsInput : {};
+    const replace = options.replace === true;
+    const current = replace
+      ? defaultAddonUpdateState()
+      : addonUpdateState();
+    const merged = normalizeAddonUpdateState({
+      ...current,
+      ...(nextInput && typeof nextInput === 'object' ? nextInput : {}),
+    });
+    S.addonUpdateState = merged;
+    try {
+      localStorage.setItem(ADDON_UPDATE_KEY, JSON.stringify(merged));
+    } catch (_err) {
+      // Ignore localStorage errors.
+    }
+    return merged;
+  }
+
+  function loadAddonUpdateState() {
+    const fallback = defaultAddonUpdateState();
+    try {
+      const raw = localStorage.getItem(ADDON_UPDATE_KEY);
+      if (!raw) {
+        S.addonUpdateState = fallback;
+        return fallback;
+      }
+      const parsed = JSON.parse(raw);
+      const normalized = normalizeAddonUpdateState(parsed);
+      S.addonUpdateState = normalized;
+      return normalized;
+    } catch (_err) {
+      S.addonUpdateState = fallback;
+      return fallback;
+    }
+  }
+
+  function addonUpdateVersionFromTag(tagInput = '') {
+    return clean(tagInput || '').replace(/^v/i, '');
+  }
+
+  function addonUpdateSemverParts(versionInput = '') {
+    const version = clean(versionInput || '').replace(/^v/i, '');
+    const match = version.match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?/);
+    if (!match) return null;
+    return {
+      major: Math.max(0, Math.floor(num(match[1]))),
+      minor: Math.max(0, Math.floor(num(match[2]))),
+      patch: Math.max(0, Math.floor(num(match[3]))),
+      prerelease: clean(match[4] || ''),
+    };
+  }
+
+  function compareAddonSemver(leftInput = '', rightInput = '') {
+    const left = addonUpdateSemverParts(leftInput);
+    const right = addonUpdateSemverParts(rightInput);
+    if (!left || !right) return 0;
+
+    if (left.major !== right.major) return left.major < right.major ? -1 : 1;
+    if (left.minor !== right.minor) return left.minor < right.minor ? -1 : 1;
+    if (left.patch !== right.patch) return left.patch < right.patch ? -1 : 1;
+
+    const leftPre = clean(left.prerelease || '');
+    const rightPre = clean(right.prerelease || '');
+    if (!leftPre && rightPre) return 1;
+    if (leftPre && !rightPre) return -1;
+    if (!leftPre && !rightPre) return 0;
+    return leftPre.localeCompare(rightPre, undefined, { sensitivity: 'base', numeric: true });
+  }
+
+  function addonUpdateFormatDate(isoInput = '') {
+    const iso = clean(isoInput || '');
+    if (!iso) return '';
+    const parsed = new Date(iso);
+    if (Number.isNaN(parsed.getTime())) return iso;
+    return parsed.toLocaleString();
+  }
+
+  function addonUpdatePsQuote(valueInput = '') {
+    return `'${String(valueInput || '').replace(/'/g, "''")}'`;
+  }
+
+  function addonUpdateShQuote(valueInput = '') {
+    const value = String(valueInput || '');
+    return `'${value.replace(/'/g, `'\"'\"'`)}'`;
+  }
+
+  function addonUpdateCommandPowerShell(stateInput = null) {
+    const state = normalizeAddonUpdateState(stateInput || addonUpdateState());
+    const repo = clean(state.repository || ADDON_UPDATE_DEFAULT_REPOSITORY);
+    const tag = clean(state.latestTag || '');
+    let command = `cd addon\\scripts; .\\update-from-github.ps1 -Repository ${addonUpdatePsQuote(repo)}`;
+    if (tag) {
+      command += ` -ReleaseTag ${addonUpdatePsQuote(tag)}`;
+    }
+    return command;
+  }
+
+  function addonUpdateCommandShell(stateInput = null) {
+    const state = normalizeAddonUpdateState(stateInput || addonUpdateState());
+    const repo = clean(state.repository || ADDON_UPDATE_DEFAULT_REPOSITORY);
+    const tag = clean(state.latestTag || '');
+    let command = `cd addon/scripts && ./update-from-github.sh --repository ${addonUpdateShQuote(repo)}`;
+    if (tag) {
+      command += ` --tag ${addonUpdateShQuote(tag)}`;
+    }
+    return command;
+  }
+
+  function addonUpdatePickReleaseAsset(assetsInput = null) {
+    const assets = Array.isArray(assetsInput) ? assetsInput : [];
+    if (!assets.length) return null;
+    return assets.find((asset) => /^grocy-addon-v.+\.zip$/i.test(clean(asset?.name || '')))
+      || assets.find((asset) => /\.zip$/i.test(clean(asset?.name || '')))
+      || null;
+  }
+
+  async function fetchAddonLatestReleaseInfo(repositoryInput = '') {
+    const repo = addonUpdateRepositoryParts(repositoryInput || '');
+    if (!repo) {
+      throw new Error(t('addon_update_repo_invalid'));
+    }
+
+    const endpoint = `https://api.github.com/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.name)}/releases/latest`;
+    let response = null;
+    try {
+      response = await fetch(endpoint, {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      });
+    } catch (error) {
+      const message = clean(error && error.message ? error.message : String(error));
+      throw new Error(message || t('focus_unknown_error'));
+    }
+
+    if (!response || !response.ok) {
+      let message = response ? `HTTP ${response.status}` : '';
+      try {
+        const payload = await response.json();
+        const remoteMessage = clean(payload && payload.message ? payload.message : '');
+        if (remoteMessage) message = remoteMessage;
+      } catch (_err) {}
+      if (response && response.status === 404) {
+        throw new Error(t('addon_update_status_release_missing'));
+      }
+      throw new Error(message || t('focus_unknown_error'));
+    }
+
+    const payload = await response.json();
+    const tag = clean(payload && payload.tag_name ? payload.tag_name : '');
+    const version = addonUpdateVersionFromTag(tag);
+    const releaseUrl = clean(payload && payload.html_url ? payload.html_url : '');
+    const asset = addonUpdatePickReleaseAsset(payload && payload.assets);
+
+    return {
+      repository: repo.repository,
+      tag,
+      version,
+      releaseUrl,
+      assetName: clean(asset && asset.name ? asset.name : ''),
+      assetUrl: clean(asset && asset.browser_download_url ? asset.browser_download_url : ''),
+    };
+  }
+
+  async function copyTextToClipboard(textInput = '') {
+    const text = String(textInput || '');
+    if (!text) return false;
+    try {
+      if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (_err) {}
+
+    try {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', 'readonly');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      area.style.pointerEvents = 'none';
+      document.body.appendChild(area);
+      area.focus();
+      area.select();
+      const copied = document.execCommand('copy');
+      if (area.parentNode) area.parentNode.removeChild(area);
+      return copied === true;
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  function normalizeAddonCompatibilityMatchText(valueInput = '') {
+    return norm(valueInput || '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
   function normalizeUserfieldMatchToken(valueInput = '') {
-    return norm(valueInput || '').replace(/[^a-z0-9]+/g, '');
+    return normalizeAddonCompatibilityMatchText(valueInput || '').replace(/\s+/g, '');
+  }
+
+  function addonCompatibilityMapKey(valueInput = '') {
+    return normalizeUserfieldMatchToken(valueInput || '');
+  }
+
+  function addonCompatibilityGroupMapKey(groupNameInput = '') {
+    return addonCompatibilityMapKey(groupNameInput);
+  }
+
+  function addonCompatibilityUserentityMapKey(entityNameInput = '') {
+    return addonCompatibilityMapKey(entityNameInput);
+  }
+
+  function addonCompatibilityUserfieldMapKey(definitionInput = {}) {
+    const definition = definitionInput && typeof definitionInput === 'object' ? definitionInput : {};
+    const entityRef = clean(definition.entity || 'products') || 'products';
+    return `${addonCompatibilityMapKey(entityRef)}::${addonCompatibilityMapKey(definition.name || '')}`;
+  }
+
+  function addonCompatibilityUserfieldRowRef(rowInput = {}) {
+    const row = rowInput && typeof rowInput === 'object' ? rowInput : {};
+    const entity = clean(row.entity || '');
+    const name = clean(row.name || '');
+    if (!entity || !name) return '';
+    return `${entity}||${name}`;
+  }
+
+  function parseAddonCompatibilityUserfieldRowRef(valueInput = '') {
+    const value = clean(valueInput || '');
+    if (!value || !value.includes('||')) return null;
+    const parts = value.split('||');
+    const entity = clean(parts[0] || '');
+    const name = clean(parts[1] || '');
+    if (!entity || !name) return null;
+    return { entity, name };
+  }
+
+  function addonCompatibilitySimilarityScore(referenceInput = '', candidateInput = '') {
+    const reference = normalizeAddonCompatibilityMatchText(referenceInput || '');
+    const candidate = normalizeAddonCompatibilityMatchText(candidateInput || '');
+    if (!reference || !candidate) return 0;
+    if (reference === candidate) return 1;
+    if (reference.includes(candidate) || candidate.includes(reference)) {
+      const ratio = Math.min(reference.length, candidate.length) / Math.max(reference.length, candidate.length);
+      return 0.7 + (0.25 * ratio);
+    }
+    const refTokens = reference.split(' ').filter(Boolean);
+    const candTokens = candidate.split(' ').filter(Boolean);
+    if (!refTokens.length || !candTokens.length) return 0;
+    const candSet = new Set(candTokens);
+    const overlap = refTokens.filter((token) => candSet.has(token)).length;
+    if (!overlap) return 0;
+    return overlap / Math.max(refTokens.length, candTokens.length);
+  }
+
+  function addonCompatibilitySimilarityCandidates(
+    expectedLabelsInput = [],
+    rowsInput = [],
+    resolverInput = null,
+    minScoreInput = 0.55,
+    maxItemsInput = 8
+  ) {
+    const expectedLabels = Array.isArray(expectedLabelsInput)
+      ? expectedLabelsInput.map((value) => clean(value || '')).filter(Boolean)
+      : [];
+    const rows = Array.isArray(rowsInput) ? rowsInput : [];
+    const resolver = typeof resolverInput === 'function' ? resolverInput : null;
+    const minScore = Math.max(0, num(minScoreInput));
+    const maxItems = Math.max(1, Math.floor(num(maxItemsInput)));
+    if (!expectedLabels.length || !rows.length || !resolver) return [];
+
+    const out = [];
+    const seen = new Set();
+
+    rows.forEach((row) => {
+      const info = resolver(row);
+      if (!info || typeof info !== 'object') return;
+      const value = clean(info.value || '');
+      const label = clean(info.label || '');
+      const scoreTexts = Array.isArray(info.scoreTexts)
+        ? info.scoreTexts.map((text) => clean(text || '')).filter(Boolean)
+        : [clean(info.scoreText || ''), label].filter(Boolean);
+      if (!value || !label || !scoreTexts.length) return;
+
+      let bestScore = 0;
+      expectedLabels.forEach((expectedLabel) => {
+        scoreTexts.forEach((scoreText) => {
+          bestScore = Math.max(bestScore, addonCompatibilitySimilarityScore(expectedLabel, scoreText));
+        });
+      });
+      if (bestScore < minScore) return;
+
+      const dedupeKey = `${addonCompatibilityMapKey(value)}|${addonCompatibilityMapKey(label)}`;
+      if (seen.has(dedupeKey)) return;
+      seen.add(dedupeKey);
+      out.push({
+        row,
+        value,
+        label,
+        score: bestScore,
+      });
+    });
+
+    out.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+    });
+    return out.slice(0, maxItems);
+  }
+
+  function addonCompatibilityProductGroupDefinitions() {
+    const lang = resolveUiLanguage();
+    return ADDON_COMPAT_REQUIRED_PRODUCT_GROUPS.map((group) => ({
+      ...group,
+      description: lang === 'en'
+        ? clean(group.descriptionEn || group.descriptionFr || '')
+        : clean(group.descriptionFr || group.descriptionEn || ''),
+    }));
+  }
+
+  function addonCompatibilityUserentityDefinitions() {
+    const lang = resolveUiLanguage();
+    return ADDON_COMPAT_REQUIRED_USERENTITIES.map((entity) => ({
+      ...entity,
+      caption: lang === 'en'
+        ? clean(entity.captionEn || entity.captionFr || entity.name)
+        : clean(entity.captionFr || entity.captionEn || entity.name),
+      description: lang === 'en'
+        ? clean(entity.descriptionEn || entity.descriptionFr || '')
+        : clean(entity.descriptionFr || entity.descriptionEn || ''),
+    }));
+  }
+
+  function addonCompatibilityExpectedEntityNameFromRef(entityRefInput = '') {
+    const entityRef = clean(entityRefInput || '');
+    if (!entityRef || norm(entityRef) === 'products') return '';
+    if (entityRef.includes(':')) return clean(entityRef.split(':').slice(1).join(':'));
+    if (entityRef.startsWith('userentity-')) return clean(entityRef.slice('userentity-'.length));
+    return entityRef;
   }
 
   function addonCompatibilityUserfieldDefinitions() {
     const lang = resolveUiLanguage();
-    return ADDON_COMPAT_REQUIRED_PRODUCT_USERFIELDS.map((field) => ({
+    return ADDON_COMPAT_REQUIRED_USERFIELDS.map((field) => ({
       ...field,
+      entity: clean(field.entity || 'products') || 'products',
       caption: lang === 'en'
         ? clean(field.captionEn || field.captionFr || field.name)
         : clean(field.captionFr || field.captionEn || field.name),
@@ -7243,21 +7996,89 @@
     return false;
   }
 
-  async function fetchProductUserfieldsForCompatibility() {
-    let payload;
-    try {
-      payload = await fetchJson('api/objects/userfields?query[]=entity=products');
-    } catch (_err) {
-      payload = await fetchJson('api/objects/userfields');
+  async function fetchProductGroupsForCompatibility() {
+    const payload = await fetchJson('api/objects/product_groups');
+    let rows = extractArray(payload);
+    if (rows.length === 0) {
+      rows = deepCollectObjects(payload, (obj) => hasAnyKey(obj, ['id']) && hasAnyKey(obj, ['name']));
     }
-    const rows = extractArray(payload).filter((row) => norm(clean(row && row.entity ? row.entity : '')) === 'products');
-    return rows;
+    return rows.filter((row) => clean(row && row.name ? row.name : ''));
   }
 
-  function addonCompatibilityCreatePayload(definitionInput = {}) {
+  async function fetchUserentitiesForCompatibility() {
+    let payload;
+    try {
+      payload = await fetchJson('api/objects/userentities');
+    } catch (_err) {
+      payload = await fetchJson('api/userentities');
+    }
+    let rows = extractArray(payload);
+    if (rows.length === 0) {
+      rows = deepCollectObjects(payload, (obj) => hasAnyKey(obj, ['name']) && hasAnyKey(obj, ['caption']));
+    }
+    return rows.filter((row) => clean(row && row.name ? row.name : ''));
+  }
+
+  async function fetchUserfieldsForCompatibility(entityInput = '') {
+    const entity = clean(entityInput || '');
+    let payload;
+    if (entity) {
+      try {
+        payload = await fetchJson(`api/objects/userfields?query[]=entity=${encodeURIComponent(entity)}`);
+      } catch (_err) {
+        payload = await fetchJson('api/objects/userfields');
+      }
+    } else {
+      payload = await fetchJson('api/objects/userfields');
+    }
+
+    let rows = extractArray(payload);
+    if (rows.length === 0) {
+      rows = deepCollectObjects(
+        payload,
+        (obj) => hasAnyKey(obj, ['entity']) && hasAnyKey(obj, ['name']) && hasAnyKey(obj, ['caption'])
+      );
+    }
+    if (!entity) return rows;
+    const entityKey = addonCompatibilityMapKey(entity);
+    return rows.filter((row) => addonCompatibilityMapKey(row && row.entity ? row.entity : '') === entityKey);
+  }
+
+  async function fetchProductUserfieldsForCompatibility() {
+    return fetchUserfieldsForCompatibility('products');
+  }
+
+  function addonCompatibilityCreateProductGroupPayload(definitionInput = {}) {
     const definition = definitionInput && typeof definitionInput === 'object' ? definitionInput : {};
     return {
-      entity: 'products',
+      name: clean(definition.name || ''),
+      description: clean(definition.description || definition.descriptionFr || definition.descriptionEn || ''),
+      active: definition.active === 0 ? 0 : 1,
+    };
+  }
+
+  function addonCompatibilityCreateUserentityPayload(definitionInput = {}) {
+    const definition = definitionInput && typeof definitionInput === 'object' ? definitionInput : {};
+    return {
+      name: clean(definition.name || ''),
+      caption: clean(definition.caption || definition.captionFr || definition.captionEn || definition.name || ''),
+      description: clean(definition.description || definition.descriptionFr || definition.descriptionEn || ''),
+      show_in_sidebar_menu: definition.showInSidebar === 0 ? 0 : 1,
+      icon_css_class: clean(definition.iconCssClass || ''),
+    };
+  }
+
+  function addonCompatibilityCreatePayload(definitionInput = {}, entityOverrideInput = '') {
+    const definition = definitionInput && typeof definitionInput === 'object' ? definitionInput : {};
+    const entityOverride = clean(entityOverrideInput || '');
+    const expectedEntityRef = clean(definition.entity || 'products') || 'products';
+    let entity = entityOverride || expectedEntityRef;
+    if (entity.startsWith('userentity:')) {
+      const entityName = addonCompatibilityExpectedEntityNameFromRef(entity);
+      entity = entityName ? `userentity-${entityName}` : 'products';
+    }
+    return {
+      entity: clean(entity || 'products') || 'products',
       name: clean(definition.name || ''),
       caption: clean(definition.caption || definition.captionFr || definition.captionEn || definition.name || ''),
       type: clean(definition.type || 'text-single-line'),
@@ -7269,6 +8090,506 @@
     };
   }
 
+  async function createAddonCompatibilityUserentity(payloadInput = {}) {
+    const payload = payloadInput && typeof payloadInput === 'object' ? payloadInput : {};
+    try {
+      return await postJson('api/objects/userentities', payload);
+    } catch (_err) {
+      return postJson('api/userentities', payload);
+    }
+  }
+
+  function addonCompatibilityResolveUserfieldEntity(definitionInput = {}, entityFindingsInput = []) {
+    const definition = definitionInput && typeof definitionInput === 'object' ? definitionInput : {};
+    const entityRef = clean(definition.entity || 'products') || 'products';
+    if (addonCompatibilityMapKey(entityRef) === addonCompatibilityMapKey('products')) {
+      return {
+        entityRef,
+        expectedEntityName: '',
+        entityKey: 'products',
+        entityDisplay: 'products',
+      };
+    }
+    const expectedEntityName = addonCompatibilityExpectedEntityNameFromRef(entityRef);
+    const expectedMapKey = addonCompatibilityUserentityMapKey(expectedEntityName);
+    const finding = Array.isArray(entityFindingsInput)
+      ? entityFindingsInput.find((entry) => clean(entry.mapKey || '') === expectedMapKey)
+      : null;
+    const resolvedName = clean((finding && finding.resolvedName) || expectedEntityName);
+    const entityKey = resolvedName ? `userentity-${resolvedName}` : '';
+    return {
+      entityRef,
+      expectedEntityName,
+      entityKey,
+      entityDisplay: resolvedName || expectedEntityName || '',
+    };
+  }
+
+  function addonCompatibilityMergeMappingSelection(selectionInput = {}) {
+    const selection = selectionInput && typeof selectionInput === 'object'
+      ? selectionInput
+      : addonCompatibilityEmptyMappings();
+    const current = normalizeAddonCompatibilityMappings(addonCompatibilityState().mappings);
+    const next = normalizeAddonCompatibilityMappings(current);
+    ['groups', 'userentities', 'userfields'].forEach((category) => {
+      const part = selection[category] && typeof selection[category] === 'object'
+        ? selection[category]
+        : {};
+      Object.entries(part).forEach(([key, value]) => {
+        const keyText = clean(key || '');
+        if (!keyText) return;
+        const valueText = clean(value || '');
+        if (!valueText) {
+          delete next[category][keyText];
+          return;
+        }
+        next[category][keyText] = valueText;
+      });
+    });
+    saveAddonCompatibilityState({ mappings: next });
+    return next;
+  }
+
+  function addonCompatibilityLooksLikeAlreadyExistsError(messageInput = '') {
+    const message = norm(messageInput || '');
+    if (!message) return false;
+    return message.includes('already exists')
+      || message.includes('already assigned')
+      || message.includes('deja')
+      || message.includes('unique');
+  }
+
+  async function analyzeAddonCompatibility(optionsInput = {}) {
+    const options = optionsInput && typeof optionsInput === 'object' ? optionsInput : {};
+    const state = addonCompatibilityState();
+    const mappings = options.useStateMappings === false
+      ? addonCompatibilityEmptyMappings()
+      : normalizeAddonCompatibilityMappings(state.mappings);
+
+    const [groupsRows, userentityRows, userfieldRows] = await Promise.all([
+      fetchProductGroupsForCompatibility(),
+      fetchUserentitiesForCompatibility(),
+      fetchUserfieldsForCompatibility(''),
+    ]);
+
+    const groupDefs = addonCompatibilityProductGroupDefinitions();
+    const userentityDefs = addonCompatibilityUserentityDefinitions();
+    const userfieldDefs = addonCompatibilityUserfieldDefinitions();
+
+    const groupFindings = groupDefs.map((definition) => {
+      const mapKey = addonCompatibilityGroupMapKey(definition.name || '');
+      const expectedKey = addonCompatibilityMapKey(definition.name || '');
+      const exactRow = groupsRows.find((row) => addonCompatibilityMapKey(row && row.name ? row.name : '') === expectedKey) || null;
+      const mappingValue = clean(mappings.groups[mapKey] || '');
+      const mappedRow = !exactRow && mappingValue
+        ? (groupsRows.find((row) => addonCompatibilityMapKey(row && row.name ? row.name : '') === addonCompatibilityMapKey(mappingValue)) || null)
+        : null;
+      const status = exactRow ? 'existing' : (mappedRow ? 'mapped' : 'missing');
+      const candidates = status === 'missing'
+        ? addonCompatibilitySimilarityCandidates(
+            [definition.name],
+            groupsRows,
+            (row) => ({
+              value: clean(row && row.name ? row.name : ''),
+              label: clean(row && row.name ? row.name : ''),
+              scoreTexts: [clean(row && row.name ? row.name : '')],
+            }),
+            0.55,
+            8
+          )
+        : [];
+      const matchRow = exactRow || mappedRow;
+      return {
+        kind: 'group',
+        mapCategory: 'groups',
+        mapKey,
+        expected: definition,
+        status,
+        matchRow,
+        resolvedName: clean(matchRow && matchRow.name ? matchRow.name : definition.name || ''),
+        candidates,
+      };
+    });
+
+    const userentityFindings = userentityDefs.map((definition) => {
+      const mapKey = addonCompatibilityUserentityMapKey(definition.name || '');
+      const expectedKeys = new Set([
+        addonCompatibilityMapKey(definition.name || ''),
+        addonCompatibilityMapKey(definition.caption || ''),
+        addonCompatibilityMapKey(definition.captionFr || ''),
+        addonCompatibilityMapKey(definition.captionEn || ''),
+      ].filter(Boolean));
+      const exactRow = userentityRows.find((row) => {
+        const rowNameKey = addonCompatibilityMapKey(row && row.name ? row.name : '');
+        const rowCaptionKey = addonCompatibilityMapKey(row && row.caption ? row.caption : '');
+        return expectedKeys.has(rowNameKey) || expectedKeys.has(rowCaptionKey);
+      }) || null;
+      const mappingValue = clean(mappings.userentities[mapKey] || '');
+      const mappingKey = addonCompatibilityMapKey(mappingValue);
+      const mappedRow = !exactRow && mappingKey
+        ? (userentityRows.find((row) => {
+          const rowNameKey = addonCompatibilityMapKey(row && row.name ? row.name : '');
+          const rowCaptionKey = addonCompatibilityMapKey(row && row.caption ? row.caption : '');
+          return rowNameKey === mappingKey || rowCaptionKey === mappingKey;
+        }) || null)
+        : null;
+      const status = exactRow ? 'existing' : (mappedRow ? 'mapped' : 'missing');
+      const candidates = status === 'missing'
+        ? addonCompatibilitySimilarityCandidates(
+            [definition.name, definition.caption],
+            userentityRows,
+            (row) => ({
+              value: clean(row && row.name ? row.name : ''),
+              label: clean(row && row.caption ? row.caption : (row && row.name ? row.name : '')),
+              scoreTexts: [
+                clean(row && row.name ? row.name : ''),
+                clean(row && row.caption ? row.caption : ''),
+              ],
+            }),
+            0.52,
+            8
+          )
+        : [];
+      const matchRow = exactRow || mappedRow;
+      return {
+        kind: 'userentity',
+        mapCategory: 'userentities',
+        mapKey,
+        expected: definition,
+        status,
+        matchRow,
+        resolvedName: clean(matchRow && matchRow.name ? matchRow.name : definition.name || ''),
+        candidates,
+      };
+    });
+
+    const userfieldFindings = userfieldDefs.map((definition) => {
+      const mapKey = addonCompatibilityUserfieldMapKey(definition);
+      const entityResolution = addonCompatibilityResolveUserfieldEntity(definition, userentityFindings);
+      const entityKey = clean(entityResolution.entityKey || 'products') || 'products';
+      const entityMatchKey = addonCompatibilityMapKey(entityKey);
+      const entityRows = userfieldRows.filter(
+        (row) => addonCompatibilityMapKey(row && row.entity ? row.entity : '') === entityMatchKey
+      );
+      const exactRow = entityRows.find((row) => userfieldMatchesAddonDefinition(row, definition)) || null;
+
+      const mappedRef = clean(mappings.userfields[mapKey] || '');
+      const parsedMappedRef = parseAddonCompatibilityUserfieldRowRef(mappedRef);
+      let mappedRow = null;
+      if (!exactRow && parsedMappedRef) {
+        mappedRow = entityRows.find((row) => {
+          const rowEntityKey = addonCompatibilityMapKey(row && row.entity ? row.entity : '');
+          const rowNameKey = addonCompatibilityMapKey(row && row.name ? row.name : '');
+          return rowEntityKey === addonCompatibilityMapKey(parsedMappedRef.entity)
+            && rowNameKey === addonCompatibilityMapKey(parsedMappedRef.name);
+        }) || null;
+      }
+
+      const status = exactRow ? 'existing' : (mappedRow ? 'mapped' : 'missing');
+      const candidates = status === 'missing'
+        ? addonCompatibilitySimilarityCandidates(
+            [definition.name, definition.caption, definition.captionFr, definition.captionEn],
+            entityRows,
+            (row) => ({
+              value: addonCompatibilityUserfieldRowRef(row),
+              label: clean(row && row.caption ? row.caption : (row && row.name ? row.name : '')),
+              scoreTexts: [
+                clean(row && row.name ? row.name : ''),
+                clean(row && row.caption ? row.caption : ''),
+              ],
+            }),
+            0.5,
+            8
+          )
+        : [];
+      const matchRow = exactRow || mappedRow;
+      return {
+        kind: 'userfield',
+        mapCategory: 'userfields',
+        mapKey,
+        expected: definition,
+        status,
+        matchRow,
+        resolvedName: clean(matchRow && matchRow.name ? matchRow.name : definition.name || ''),
+        targetEntityKey: entityKey,
+        targetEntityDisplay: clean(entityResolution.entityDisplay || ''),
+        expectedEntityName: clean(entityResolution.expectedEntityName || ''),
+        candidates,
+      };
+    });
+
+    const mappingSuggestions = [];
+
+    groupFindings
+      .filter((finding) => finding.status === 'missing' && finding.candidates.length > 0)
+      .forEach((finding) => {
+        mappingSuggestions.push({
+          mapCategory: finding.mapCategory,
+          mapKey: finding.mapKey,
+          label: langText(`Groupe: ${finding.expected.name}`, `Group: ${finding.expected.name}`),
+          expectedName: clean(finding.expected.name || ''),
+          candidates: finding.candidates,
+        });
+      });
+
+    userentityFindings
+      .filter((finding) => finding.status === 'missing' && finding.candidates.length > 0)
+      .forEach((finding) => {
+        mappingSuggestions.push({
+          mapCategory: finding.mapCategory,
+          mapKey: finding.mapKey,
+          label: langText(
+            `Entité utilisateur: ${finding.expected.caption || finding.expected.name}`,
+            `User entity: ${finding.expected.caption || finding.expected.name}`
+          ),
+          expectedName: clean(finding.expected.caption || finding.expected.name || ''),
+          candidates: finding.candidates,
+        });
+      });
+
+    userfieldFindings
+      .filter((finding) => finding.status === 'missing' && finding.candidates.length > 0)
+      .forEach((finding) => {
+        const entityLabel = finding.targetEntityKey === 'products'
+          ? langText('produits', 'products')
+          : clean(finding.targetEntityDisplay || finding.expectedEntityName || '');
+        mappingSuggestions.push({
+          mapCategory: finding.mapCategory,
+          mapKey: finding.mapKey,
+          label: langText(
+            `Attribut: ${finding.expected.caption || finding.expected.name} (${entityLabel})`,
+            `Field: ${finding.expected.caption || finding.expected.name} (${entityLabel})`
+          ),
+          expectedName: clean(finding.expected.caption || finding.expected.name || ''),
+          candidates: finding.candidates,
+        });
+      });
+
+    const allFindings = [...groupFindings, ...userentityFindings, ...userfieldFindings];
+    const existingCount = allFindings.filter((finding) => finding.status === 'existing').length;
+    const mappedCount = allFindings.filter((finding) => finding.status === 'mapped').length;
+    const missingCount = allFindings.filter((finding) => finding.status === 'missing').length;
+
+    return {
+      groupFindings,
+      userentityFindings,
+      userfieldFindings,
+      mappingSuggestions,
+      existingCount,
+      mappedCount,
+      missingCount,
+      allSatisfied: missingCount === 0,
+      createGroups: groupFindings.filter((finding) => finding.status === 'missing'),
+      createUserentities: userentityFindings.filter((finding) => finding.status === 'missing'),
+      createUserfields: userfieldFindings.filter((finding) => finding.status === 'missing'),
+    };
+  }
+
+  function ensureAddonCompatibilityMappingModal() {
+    if (document.getElementById('dash_addon_compat_mapping_modal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'dash_addon_compat_mapping_modal';
+    modal.className = 'd-none';
+    modal.innerHTML = `
+      <div class="dash-addon-compat-mapping-card card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div class="font-weight-bold">${t('addon_compat_mapping_title')}</div>
+          <button id="dash_addon_compat_mapping_close" type="button" class="btn btn-sm btn-outline-secondary">${t('addon_compat_mapping_close')}</button>
+        </div>
+        <div class="card-body">
+          <div id="dash_addon_compat_mapping_intro" class="small text-muted mb-2"></div>
+          <div id="dash_addon_compat_mapping_rows"></div>
+        </div>
+        <div class="card-footer d-flex justify-content-end flex-wrap">
+          <button id="dash_addon_compat_mapping_skip" type="button" class="btn btn-sm btn-outline-secondary mr-2 mb-1">${t('addon_compat_mapping_skip')}</button>
+          <button id="dash_addon_compat_mapping_apply" type="button" class="btn btn-sm btn-primary mb-1">${t('addon_compat_mapping_apply')}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const close = () => closeAddonCompatibilityMappingModal(null);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) close();
+    });
+    document.getElementById('dash_addon_compat_mapping_close')?.addEventListener('click', close);
+    document.addEventListener('keydown', (event) => {
+      if (event && event.key === 'Escape' && !modal.classList.contains('d-none')) {
+        close();
+      }
+    });
+  }
+
+  function closeAddonCompatibilityMappingModal(resultInput = null) {
+    const modal = document.getElementById('dash_addon_compat_mapping_modal');
+    if (modal) modal.classList.add('d-none');
+    if (typeof S.addonCompatMappingResolve === 'function') {
+      const resolver = S.addonCompatMappingResolve;
+      S.addonCompatMappingResolve = null;
+      resolver(resultInput);
+    }
+  }
+
+  function openAddonCompatibilityMappingModal(suggestionsInput = []) {
+    const suggestions = Array.isArray(suggestionsInput) ? suggestionsInput : [];
+    if (!suggestions.length) return Promise.resolve(addonCompatibilityEmptyMappings());
+
+    ensureAddonCompatibilityMappingModal();
+
+    const modal = document.getElementById('dash_addon_compat_mapping_modal');
+    const intro = document.getElementById('dash_addon_compat_mapping_intro');
+    const rowsHost = document.getElementById('dash_addon_compat_mapping_rows');
+    if (!modal || !rowsHost) return Promise.resolve(addonCompatibilityEmptyMappings());
+
+    const stateMappings = normalizeAddonCompatibilityMappings(addonCompatibilityState().mappings);
+    if (intro) {
+      intro.textContent = t('addon_compat_mapping_intro', {
+        count: fmt(suggestions.length, 0),
+      });
+    }
+
+    const rowsHtml = suggestions.map((suggestion, index) => {
+      const category = clean(suggestion.mapCategory || '');
+      const key = clean(suggestion.mapKey || '');
+      const currentValue = clean(
+        stateMappings[category] && typeof stateMappings[category] === 'object'
+          ? (stateMappings[category][key] || '')
+          : ''
+      );
+      const optionRows = [
+        `<option value="">${escapeHtml(t('addon_compat_mapping_create', { name: suggestion.expectedName || '' }))}</option>`,
+        ...(Array.isArray(suggestion.candidates) ? suggestion.candidates : []).map((candidate) => {
+          const value = clean(candidate && candidate.value ? candidate.value : '');
+          const label = clean(candidate && candidate.label ? candidate.label : '');
+          if (!value || !label) return '';
+          const selected = addonCompatibilityMapKey(currentValue) === addonCompatibilityMapKey(value) ? ' selected' : '';
+          return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(label)} (${escapeHtml(t('addon_compat_mapping_similarity', { score: fmt(num(candidate.score) * 100, 0) }))})</option>`;
+        }).filter(Boolean),
+      ].join('');
+      return `
+        <div class="form-group mb-2 pb-2 border-bottom">
+          <label for="dash_addon_compat_map_${index}" class="mb-1 small font-weight-bold">${escapeHtml(clean(suggestion.label || ''))}</label>
+          <select
+            id="dash_addon_compat_map_${index}"
+            class="form-control form-control-sm"
+            data-addon-compat-map-category="${escapeHtml(category)}"
+            data-addon-compat-map-key="${escapeHtml(key)}"
+          >
+            ${optionRows}
+          </select>
+        </div>
+      `;
+    }).join('');
+
+    rowsHost.innerHTML = rowsHtml;
+
+    const skipButton = document.getElementById('dash_addon_compat_mapping_skip');
+    if (skipButton) {
+      skipButton.onclick = () => {
+        closeAddonCompatibilityMappingModal(addonCompatibilityEmptyMappings());
+      };
+    }
+    const applyButton = document.getElementById('dash_addon_compat_mapping_apply');
+    if (applyButton) {
+      applyButton.onclick = () => {
+        const payload = addonCompatibilityEmptyMappings();
+        rowsHost.querySelectorAll('select[data-addon-compat-map-category][data-addon-compat-map-key]').forEach((select) => {
+          const category = clean(select.getAttribute('data-addon-compat-map-category') || '');
+          const key = clean(select.getAttribute('data-addon-compat-map-key') || '');
+          if (!category || !key || !Object.prototype.hasOwnProperty.call(payload, category)) return;
+          payload[category][key] = clean(select.value || '');
+        });
+        closeAddonCompatibilityMappingModal(payload);
+      };
+    }
+
+    modal.classList.remove('d-none');
+
+    if (typeof S.addonCompatMappingResolve === 'function') {
+      S.addonCompatMappingResolve(addonCompatibilityEmptyMappings());
+    }
+
+    return new Promise((resolve) => {
+      S.addonCompatMappingResolve = resolve;
+    });
+  }
+
+  async function refreshAddonCompatibilityScan(optionsInput = {}) {
+    const options = optionsInput && typeof optionsInput === 'object' ? optionsInput : {};
+    if (S.addonCompatScanPromise && options.force !== true) return S.addonCompatScanPromise;
+
+    const run = async () => {
+      try {
+        const analysis = await analyzeAddonCompatibility();
+        S.addonCompatScan = {
+          checkedAt: new Date().toISOString(),
+          allSatisfied: analysis.allSatisfied === true,
+          missingCount: Math.max(0, Math.floor(num(analysis.missingCount))),
+          mappedCount: Math.max(0, Math.floor(num(analysis.mappedCount))),
+          existingCount: Math.max(0, Math.floor(num(analysis.existingCount))),
+          suggestionCount: Array.isArray(analysis.mappingSuggestions) ? analysis.mappingSuggestions.length : 0,
+        };
+
+        const state = addonCompatibilityState();
+        if (analysis.allSatisfied) {
+          if (state.completed !== true || state.lastError) {
+            saveAddonCompatibilityState({
+              completed: true,
+              lastError: '',
+              lastSummary: state.lastSummary || t('addon_compat_status_ready'),
+            });
+          }
+        } else if (state.completed === true) {
+          saveAddonCompatibilityState({ completed: false });
+        }
+
+        if (options.render === true) {
+          renderAddonCompatibilityBanner();
+          syncAddonCompatibilitySettingsSection();
+        }
+        return analysis;
+      } catch (_error) {
+        S.addonCompatScan = null;
+        if (options.render === true) {
+          renderAddonCompatibilityBanner();
+          syncAddonCompatibilitySettingsSection();
+        }
+        return null;
+      } finally {
+        S.addonCompatScanPromise = null;
+      }
+    };
+
+    S.addonCompatScanPromise = run();
+    return S.addonCompatScanPromise;
+  }
+
+  async function openAddonCompatibilityMappingAssistant() {
+    if (S.addonCompatApplying) return { cancelled: false, updated: false };
+    try {
+      const analysis = await analyzeAddonCompatibility();
+      if (!analysis || !Array.isArray(analysis.mappingSuggestions) || analysis.mappingSuggestions.length === 0) {
+        const message = analysis && analysis.allSatisfied
+          ? t('addon_compat_status_ready')
+          : t('addon_compat_status_mapping_none');
+        setAddonCompatibilitySettingsStatus(message, analysis && analysis.allSatisfied ? 'success' : 'muted');
+        return { cancelled: false, updated: false };
+      }
+      const selection = await openAddonCompatibilityMappingModal(analysis.mappingSuggestions);
+      if (selection === null) {
+        setAddonCompatibilitySettingsStatus(t('addon_compat_status_mapping_cancelled'), 'warning');
+        return { cancelled: true, updated: false };
+      }
+      addonCompatibilityMergeMappingSelection(selection);
+      await refreshAddonCompatibilityScan({ render: true, force: true });
+      return { cancelled: false, updated: true };
+    } catch (error) {
+      const message = clean(error && error.message ? error.message : String(error)) || t('focus_unknown_error');
+      setAddonCompatibilitySettingsStatus(t('addon_compat_status_fail', { msg: message }), 'danger');
+      return { cancelled: false, updated: false };
+    }
+  }
+
   function setAddonCompatibilitySettingsStatus(text = '', level = 'muted') {
     const node = document.getElementById('dash_addon_compat_status');
     if (!node) return;
@@ -7278,9 +8599,11 @@
 
   function syncAddonCompatibilitySettingsSection() {
     const runBtn = document.getElementById('dash_addon_compat_run');
+    const mapBtn = document.getElementById('dash_addon_compat_map');
     const reofferBtn = document.getElementById('dash_addon_compat_reoffer');
     const state = addonCompatibilityState();
     if (runBtn) runBtn.disabled = S.addonCompatApplying === true;
+    if (mapBtn) mapBtn.disabled = S.addonCompatApplying === true;
     if (reofferBtn) reofferBtn.disabled = S.addonCompatApplying === true;
     if (S.addonCompatApplying === true) {
       setAddonCompatibilitySettingsStatus(t('addon_compat_status_running'), 'info');
@@ -7294,6 +8617,10 @@
       setAddonCompatibilitySettingsStatus(state.lastSummary, state.completed ? 'success' : 'warning');
       return;
     }
+    if (S.addonCompatScan && S.addonCompatScan.allSatisfied) {
+      setAddonCompatibilitySettingsStatus(t('addon_compat_status_ready'), 'success');
+      return;
+    }
     setAddonCompatibilitySettingsStatus(t('addon_compat_status_idle'), 'muted');
   }
 
@@ -7304,6 +8631,7 @@
   function shouldShowAddonCompatibilityBanner() {
     const state = addonCompatibilityState();
     if (state.completed) return false;
+    if (S.addonCompatScan && S.addonCompatScan.allSatisfied) return false;
     return state.onboardingSeen !== true;
   }
 
@@ -7317,15 +8645,27 @@
       return;
     }
 
+    const scan = S.addonCompatScan;
+    const scopeText = scan && scan.missingCount > 0
+      ? t('addon_compat_banner_missing_detail', {
+        missing: fmt(scan.missingCount, 0),
+        mapping: fmt(scan.suggestionCount || 0, 0),
+      })
+      : t('addon_compat_scope_note');
+    const mapButtonHtml = scan && scan.suggestionCount > 0
+      ? `<button id="dash_addon_compat_banner_map" type="button" class="btn btn-outline-warning">${t('addon_compat_banner_map')}</button>`
+      : '';
+
     host.classList.remove('d-none');
     host.innerHTML = `
       <div class="alert alert-info border mb-0">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
           <div class="small mb-2 mb-md-0">
             <div>${escapeHtml(t('addon_compat_banner_text'))}</div>
-            <div class="text-muted">${escapeHtml(t('addon_compat_scope_note'))}</div>
+            <div class="text-muted">${escapeHtml(scopeText)}</div>
           </div>
           <div class="btn-group btn-group-sm">
+            ${mapButtonHtml}
             <button id="dash_addon_compat_banner_apply" type="button" class="btn btn-outline-info">${t('addon_compat_banner_apply')}</button>
             <button id="dash_addon_compat_banner_later" type="button" class="btn btn-outline-secondary">${t('addon_compat_banner_later')}</button>
           </div>
@@ -7333,6 +8673,10 @@
       </div>
     `;
 
+    host.querySelector('#dash_addon_compat_banner_map')?.addEventListener('click', async () => {
+      saveAddonCompatibilityState({ onboardingSeen: true });
+      await openAddonCompatibilityMappingAssistant();
+    });
     host.querySelector('#dash_addon_compat_banner_apply')?.addEventListener('click', async () => {
       saveAddonCompatibilityState({ onboardingSeen: true });
       await runAddonCompatibilitySetup({ source: 'banner' });
@@ -7354,34 +8698,102 @@
     syncAddonCompatibilitySettingsSection();
 
     try {
-      const existingRows = await fetchProductUserfieldsForCompatibility();
-      const defs = addonCompatibilityUserfieldDefinitions();
+      let analysis = await analyzeAddonCompatibility();
+      if (!analysis) {
+        throw new Error(t('focus_unknown_error'));
+      }
+
+      if (Array.isArray(analysis.mappingSuggestions) && analysis.mappingSuggestions.length > 0 && options.skipMappingPrompt !== true) {
+        const selection = await openAddonCompatibilityMappingModal(analysis.mappingSuggestions);
+        if (selection === null) {
+          saveAddonCompatibilityState({
+            onboardingSeen: true,
+            completed: false,
+            lastSummary: t('addon_compat_status_mapping_cancelled'),
+            lastError: '',
+          });
+          syncAddonCompatibilitySettingsSection();
+          renderAddonCompatibilityBanner();
+          return { cancelled: true };
+        }
+        addonCompatibilityMergeMappingSelection(selection);
+        analysis = await analyzeAddonCompatibility();
+      }
+
+      if (analysis.allSatisfied) {
+        const summaryReady = t('addon_compat_status_ready');
+        saveAddonCompatibilityState({
+          onboardingSeen: true,
+          completed: true,
+          lastRunAt: new Date().toISOString(),
+          lastSummary: summaryReady,
+          lastError: '',
+        });
+        await refreshAddonCompatibilityScan({ render: true, force: true });
+        syncAddonCompatibilitySettingsSection();
+        renderAddonCompatibilityBanner();
+        setAiSettingsStatus(summaryReady, 'success');
+        return { created: 0, existing: analysis.existingCount, mapped: analysis.mappedCount, failed: 0, errors: [] };
+      }
+
       let created = 0;
-      let existing = 0;
+      let existing = analysis.existingCount;
+      const mapped = analysis.mappedCount;
       let failed = 0;
       const errors = [];
 
-      for (const def of defs) {
-        const already = existingRows.find((row) => userfieldMatchesAddonDefinition(row, def));
-        if (already) {
-          existing += 1;
-          continue;
-        }
+      for (const finding of analysis.createGroups) {
         try {
-          const payload = addonCompatibilityCreatePayload(def);
+          const payload = addonCompatibilityCreateProductGroupPayload(finding.expected);
+          await postJson('api/objects/product_groups', payload);
+          created += 1;
+        } catch (error) {
+          const message = clean(error && error.message ? error.message : String(error)) || t('focus_unknown_error');
+          if (addonCompatibilityLooksLikeAlreadyExistsError(message)) {
+            existing += 1;
+            continue;
+          }
+          failed += 1;
+          errors.push(`${finding.expected.name}: ${message}`);
+        }
+      }
+
+      for (const finding of analysis.createUserentities) {
+        try {
+          const payload = addonCompatibilityCreateUserentityPayload(finding.expected);
+          await createAddonCompatibilityUserentity(payload);
+          created += 1;
+        } catch (error) {
+          const message = clean(error && error.message ? error.message : String(error)) || t('focus_unknown_error');
+          if (addonCompatibilityLooksLikeAlreadyExistsError(message)) {
+            existing += 1;
+            continue;
+          }
+          failed += 1;
+          errors.push(`${finding.expected.name}: ${message}`);
+        }
+      }
+
+      for (const finding of analysis.createUserfields) {
+        try {
+          const payload = addonCompatibilityCreatePayload(finding.expected, finding.targetEntityKey);
           await postJson('api/objects/userfields', payload);
           created += 1;
-          existingRows.push(payload);
         } catch (error) {
-          failed += 1;
           const message = clean(error && error.message ? error.message : String(error)) || t('focus_unknown_error');
-          errors.push(`${def.name}: ${message}`);
+          if (addonCompatibilityLooksLikeAlreadyExistsError(message)) {
+            existing += 1;
+            continue;
+          }
+          failed += 1;
+          errors.push(`${finding.expected.name}: ${message}`);
         }
       }
 
       const summary = t('addon_compat_status_done', {
         created: fmt(created, 0),
         existing: fmt(existing, 0),
+        mapped: fmt(mapped, 0),
         failed: fmt(failed, 0),
       });
       saveAddonCompatibilityState({
@@ -7391,6 +8803,7 @@
         lastSummary: summary,
         lastError: errors.length ? errors.slice(0, 3).join(' | ') : '',
       });
+      await refreshAddonCompatibilityScan({ render: true, force: true });
       syncAddonCompatibilitySettingsSection();
       renderAddonCompatibilityBanner();
       if (errors.length) {
@@ -7398,7 +8811,7 @@
       } else {
         setAiSettingsStatus(summary, 'success');
       }
-      return { created, existing, failed, errors };
+      return { created, existing, mapped, failed, errors };
     } catch (error) {
       const message = clean(error && error.message ? error.message : String(error)) || t('focus_unknown_error');
       saveAddonCompatibilityState({
@@ -7416,6 +8829,201 @@
       S.addonCompatApplying = false;
       syncAddonCompatibilitySettingsSection();
     }
+  }
+
+  function setAddonUpdateSettingsStatus(text = '', level = 'muted') {
+    const node = document.getElementById('dash_addon_update_status');
+    if (!node) return;
+    node.className = `small mt-2 text-${level}`;
+    node.textContent = clean(text || '');
+  }
+
+  function setAddonUpdateVersionsStatus(text = '', level = 'muted') {
+    const node = document.getElementById('dash_addon_update_versions');
+    if (!node) return;
+    node.className = `small mt-2 text-${level}`;
+    node.textContent = clean(text || '');
+  }
+
+  function syncAddonUpdateReleaseLink(stateInput = null) {
+    const state = normalizeAddonUpdateState(stateInput || addonUpdateState());
+    const link = document.getElementById('dash_addon_update_open_release');
+    if (!link) return;
+    const releaseUrl = clean(state.releaseUrl || '');
+    if (!releaseUrl) {
+      link.classList.add('d-none');
+      link.removeAttribute('href');
+      link.textContent = t('addon_update_open_release_btn');
+      return;
+    }
+    link.classList.remove('d-none');
+    link.setAttribute('href', releaseUrl);
+    const tag = clean(state.latestTag || '');
+    link.textContent = tag
+      ? t('addon_update_open_release_tag', { tag })
+      : t('addon_update_open_release_btn');
+  }
+
+  function syncAddonUpdateCommandFields(stateInput = null) {
+    const state = normalizeAddonUpdateState(stateInput || addonUpdateState());
+    const ps = document.getElementById('dash_addon_update_cmd_ps');
+    const sh = document.getElementById('dash_addon_update_cmd_sh');
+    if (ps) ps.value = addonUpdateCommandPowerShell(state);
+    if (sh) sh.value = addonUpdateCommandShell(state);
+  }
+
+  function syncAddonUpdateVersionSummary(stateInput = null) {
+    const state = normalizeAddonUpdateState(stateInput || addonUpdateState());
+    const localVersion = clean(ADDON_RUNTIME_VERSION || '') || t('addon_update_version_unknown');
+    const remoteVersion = clean(state.latestVersion || addonUpdateVersionFromTag(state.latestTag || '')) || t('addon_update_version_unknown');
+    const tag = clean(state.latestTag || '') || '-';
+    const checkedLabel = state.checkedAt
+      ? t('addon_update_last_checked', { date: addonUpdateFormatDate(state.checkedAt) || state.checkedAt })
+      : t('addon_update_not_checked');
+    const line = `${t('addon_update_versions_line', { local: localVersion, remote: remoteVersion, tag })} ${checkedLabel}`;
+    setAddonUpdateVersionsStatus(line, 'muted');
+  }
+
+  function syncAddonUpdateSettingsSection() {
+    const busy = S.addonUpdateChecking === true;
+    const ids = [
+      'dash_addon_update_repo',
+      'dash_addon_update_check',
+      'dash_addon_update_copy_ps',
+      'dash_addon_update_copy_sh',
+    ];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = busy;
+    });
+    if (busy) {
+      setAddonUpdateSettingsStatus(t('addon_update_status_checking'), 'info');
+      return;
+    }
+
+    const state = addonUpdateState();
+    if (state.lastStatus) {
+      setAddonUpdateSettingsStatus(state.lastStatus, normalizeAddonUpdateStatusLevel(state.lastStatusLevel || 'muted'));
+      return;
+    }
+    if (state.lastError) {
+      setAddonUpdateSettingsStatus(t('addon_update_status_error', { msg: state.lastError }), 'danger');
+      return;
+    }
+    setAddonUpdateSettingsStatus(t('addon_update_status_idle'), 'muted');
+  }
+
+  async function copyAddonUpdateCommandFromField(fieldId = '') {
+    const input = document.getElementById(fieldId);
+    const text = clean(input?.value || '');
+    if (!text) {
+      setAddonUpdateSettingsStatus(t('addon_update_copy_fail'), 'warning');
+      return false;
+    }
+    const copied = await copyTextToClipboard(text);
+    setAddonUpdateSettingsStatus(copied ? t('addon_update_copy_ok') : t('addon_update_copy_fail'), copied ? 'success' : 'warning');
+    return copied;
+  }
+
+  async function runAddonUpdateVersionCheck() {
+    if (S.addonUpdateChecking) return null;
+    const repoInput = document.getElementById('dash_addon_update_repo');
+    const candidate = addonUpdateRepositoryText(repoInput?.value || addonUpdateState().repository || ADDON_UPDATE_DEFAULT_REPOSITORY);
+    const parts = addonUpdateRepositoryParts(candidate);
+    if (!parts) {
+      const msg = t('addon_update_repo_invalid');
+      const invalidState = saveAddonUpdateState({
+        repository: clean(repoInput?.value || candidate || ADDON_UPDATE_DEFAULT_REPOSITORY),
+        checkedAt: new Date().toISOString(),
+        lastError: msg,
+        lastStatus: t('addon_update_status_error', { msg }),
+        lastStatusLevel: 'danger',
+      });
+      syncAddonUpdateCommandFields(invalidState);
+      syncAddonUpdateReleaseLink(invalidState);
+      syncAddonUpdateVersionSummary(invalidState);
+      syncAddonUpdateSettingsSection();
+      return null;
+    }
+
+    if (repoInput) repoInput.value = parts.repository;
+    saveAddonUpdateState({ repository: parts.repository, lastError: '' });
+
+    S.addonUpdateChecking = true;
+    syncAddonUpdateSettingsSection();
+
+    let finalState = null;
+    try {
+      const release = await fetchAddonLatestReleaseInfo(parts.repository);
+      const localVersion = clean(ADDON_RUNTIME_VERSION || '') || t('addon_update_version_unknown');
+      const remoteVersion = clean(release.version || addonUpdateVersionFromTag(release.tag || '')) || t('addon_update_version_unknown');
+      const tag = clean(release.tag || '-');
+      const compare = compareAddonSemver(localVersion, remoteVersion);
+
+      let statusText = '';
+      let statusLevel = 'info';
+      if (!clean(release.assetUrl || '')) {
+        statusText = t('addon_update_status_release_missing_asset', { tag });
+        statusLevel = 'warning';
+      } else if (compare < 0) {
+        statusText = t('addon_update_status_update_available', {
+          local: localVersion,
+          latest: remoteVersion,
+          tag,
+        });
+        statusLevel = 'warning';
+      } else if (compare > 0) {
+        statusText = t('addon_update_status_local_ahead', {
+          local: localVersion,
+          latest: remoteVersion,
+        });
+        statusLevel = 'info';
+      } else {
+        statusText = t('addon_update_status_up_to_date', { version: localVersion });
+        statusLevel = 'success';
+      }
+
+      finalState = saveAddonUpdateState({
+        repository: release.repository || parts.repository,
+        checkedAt: new Date().toISOString(),
+        latestTag: clean(release.tag || ''),
+        latestVersion: clean(release.version || ''),
+        releaseUrl: clean(release.releaseUrl || ''),
+        assetUrl: clean(release.assetUrl || ''),
+        assetName: clean(release.assetName || ''),
+        lastError: '',
+        lastStatus: statusText,
+        lastStatusLevel: statusLevel,
+      });
+    } catch (error) {
+      const message = clean(error && error.message ? error.message : String(error)) || t('focus_unknown_error');
+      finalState = saveAddonUpdateState({
+        repository: parts.repository,
+        checkedAt: new Date().toISOString(),
+        lastError: message,
+        lastStatus: t('addon_update_status_error', { msg: message }),
+        lastStatusLevel: 'danger',
+      });
+    } finally {
+      S.addonUpdateChecking = false;
+      const state = finalState || addonUpdateState();
+      syncAddonUpdateCommandFields(state);
+      syncAddonUpdateReleaseLink(state);
+      syncAddonUpdateVersionSummary(state);
+      syncAddonUpdateSettingsSection();
+    }
+
+    return finalState;
+  }
+
+  function fillAddonUpdateSettingsForm() {
+    const state = addonUpdateState();
+    const repoInput = document.getElementById('dash_addon_update_repo');
+    if (repoInput) repoInput.value = clean(state.repository || ADDON_UPDATE_DEFAULT_REPOSITORY);
+    syncAddonUpdateCommandFields(state);
+    syncAddonUpdateReleaseLink(state);
+    syncAddonUpdateVersionSummary(state);
+    syncAddonUpdateSettingsSection();
   }
 
   function providerFormFieldId(providerId, fieldName) {
@@ -8037,6 +9645,7 @@
     fillBarcodeLookupSettingsForm();
     setFactsApiTestStatus('', 'muted');
     syncAddonCompatibilitySettingsSection();
+    fillAddonUpdateSettingsForm();
     if (status) status.textContent = '';
   }
 
@@ -8162,7 +9771,12 @@
       'dash_facts_test_opf',
       'dash_facts_test_active',
       'dash_addon_compat_run',
+      'dash_addon_compat_map',
       'dash_addon_compat_reoffer',
+      'dash_addon_update_repo',
+      'dash_addon_update_check',
+      'dash_addon_update_copy_ps',
+      'dash_addon_update_copy_sh',
       'dash_brand_logo_save_section',
       'dash_brand_logo_lookup',
       'dash_brand_logo_fetch_all',
@@ -8189,6 +9803,10 @@
     document.querySelectorAll('[data-ai-provider-test]').forEach((button) => {
       if (button) button.disabled = busy;
     });
+    if (!busy) {
+      syncAddonCompatibilitySettingsSection();
+      syncAddonUpdateSettingsSection();
+    }
   }
 
   function setAiProviderFieldError(providerId, fieldName, message = '') {
@@ -9413,6 +11031,7 @@
       <div class="small text-muted mb-2">${t('addon_compat_scope_note')}</div>
       <div class="d-flex flex-wrap align-items-center">
         <button id="dash_addon_compat_run" type="button" class="btn btn-outline-info btn-sm mr-2 mb-1">${t('addon_compat_run_btn')}</button>
+        <button id="dash_addon_compat_map" type="button" class="btn btn-outline-warning btn-sm mr-2 mb-1">${t('addon_compat_map_btn')}</button>
         <button id="dash_addon_compat_reoffer" type="button" class="btn btn-outline-secondary btn-sm mb-1">${t('addon_compat_reoffer_btn')}</button>
       </div>
       <div id="dash_addon_compat_status" class="small mt-2 text-muted"></div>
@@ -9428,6 +11047,9 @@
     section.querySelector('#dash_addon_compat_run')?.addEventListener('click', async () => {
       await runAddonCompatibilitySetup({ source: 'settings' });
     });
+    section.querySelector('#dash_addon_compat_map')?.addEventListener('click', async () => {
+      await openAddonCompatibilityMappingAssistant();
+    });
     section.querySelector('#dash_addon_compat_reoffer')?.addEventListener('click', () => {
       saveAddonCompatibilityState({
         onboardingSeen: false,
@@ -9438,9 +11060,91 @@
       setAddonCompatibilitySettingsStatus(t('addon_compat_status_prompt_reset'), 'info');
       renderAddonCompatibilityBanner();
       syncAddonCompatibilitySettingsSection();
+      refreshAddonCompatibilityScan({ render: true, force: true });
     });
 
     syncAddonCompatibilitySettingsSection();
+    refreshAddonCompatibilityScan({ render: true });
+  }
+
+  function ensureAddonUpdateSettingsSection() {
+    const overlay = document.getElementById('dash_ai_settings_overlay');
+    if (!overlay) return;
+    if (document.getElementById('dash_addon_update_section')) return;
+
+    const body = overlay.querySelector('.card-body');
+    if (!body) return;
+
+    const section = document.createElement('div');
+    section.id = 'dash_addon_update_section';
+    section.className = 'dash-settings-section p-2 mt-3';
+    section.innerHTML = `
+      <div class="small font-weight-bold mb-2">${t('settings_section_addon_update')}</div>
+      <div class="small text-muted mb-2">${t('addon_update_desc')}</div>
+      <div class="form-row align-items-end">
+        <div class="form-group col-md-8 mb-2">
+          <label for="dash_addon_update_repo" class="mb-1">${t('addon_update_repo_label')}</label>
+          <input id="dash_addon_update_repo" type="text" class="form-control form-control-sm" placeholder="Raph563/Grocy">
+          <div class="small text-muted mt-1">${t('addon_update_repo_hint')}</div>
+        </div>
+        <div class="form-group col-md-4 mb-2 d-flex justify-content-md-end align-items-end">
+          <button id="dash_addon_update_check" type="button" class="btn btn-outline-info btn-sm mr-2">${t('addon_update_check_btn')}</button>
+          <a id="dash_addon_update_open_release" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm d-none">${t('addon_update_open_release_btn')}</a>
+        </div>
+      </div>
+      <div class="form-group mb-2">
+        <label for="dash_addon_update_cmd_ps" class="mb-1">${t('addon_update_cmd_ps_label')}</label>
+        <div class="input-group input-group-sm">
+          <input id="dash_addon_update_cmd_ps" type="text" class="form-control form-control-sm" readonly>
+          <div class="input-group-append">
+            <button id="dash_addon_update_copy_ps" type="button" class="btn btn-outline-secondary">${t('addon_update_copy_btn')}</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group mb-1">
+        <label for="dash_addon_update_cmd_sh" class="mb-1">${t('addon_update_cmd_sh_label')}</label>
+        <div class="input-group input-group-sm">
+          <input id="dash_addon_update_cmd_sh" type="text" class="form-control form-control-sm" readonly>
+          <div class="input-group-append">
+            <button id="dash_addon_update_copy_sh" type="button" class="btn btn-outline-secondary">${t('addon_update_copy_btn')}</button>
+          </div>
+        </div>
+      </div>
+      <div class="small text-muted">${t('addon_update_cmd_hint')}</div>
+      <div id="dash_addon_update_versions" class="small mt-2 text-muted"></div>
+      <div id="dash_addon_update_status" class="small mt-2 text-muted"></div>
+    `;
+
+    const compatSection = document.getElementById('dash_addon_compat_section');
+    if (compatSection && compatSection.parentNode) {
+      compatSection.parentNode.insertBefore(section, compatSection.nextSibling);
+    } else {
+      body.appendChild(section);
+    }
+
+    section.querySelector('#dash_addon_update_repo')?.addEventListener('change', (event) => {
+      const target = event && event.target ? event.target : null;
+      if (!target) return;
+      const normalized = addonUpdateRepositoryText(target.value || '');
+      target.value = normalized;
+      const next = saveAddonUpdateState({ repository: normalized });
+      syncAddonUpdateCommandFields(next);
+      syncAddonUpdateReleaseLink(next);
+      syncAddonUpdateVersionSummary(next);
+      syncAddonUpdateSettingsSection();
+    });
+
+    section.querySelector('#dash_addon_update_check')?.addEventListener('click', async () => {
+      await runAddonUpdateVersionCheck();
+    });
+    section.querySelector('#dash_addon_update_copy_ps')?.addEventListener('click', async () => {
+      await copyAddonUpdateCommandFromField('dash_addon_update_cmd_ps');
+    });
+    section.querySelector('#dash_addon_update_copy_sh')?.addEventListener('click', async () => {
+      await copyAddonUpdateCommandFromField('dash_addon_update_cmd_sh');
+    });
+
+    fillAddonUpdateSettingsForm();
   }
 
   function initAiSettingsOverlay() {
@@ -9650,6 +11354,7 @@
     ensureFactsApiTestSection();
     ensurePhotoSearchSettingsSection();
     ensureAddonCompatibilitySection();
+    ensureAddonUpdateSettingsSection();
 
     document.getElementById('dash_ai_close')?.addEventListener('click', closeAiSettingsOverlay);
     document.getElementById('dash_ai_provider')?.addEventListener('change', () => {
@@ -24968,6 +26673,7 @@
     safeRun('loadBrandLogoSettings', () => loadBrandLogoSettings());
     safeRun('loadUiState', () => loadUiState());
     safeRun('loadAddonCompatibilityState', () => loadAddonCompatibilityState());
+    safeRun('loadAddonUpdateState', () => loadAddonUpdateState());
     safeRun('initTabs', () => initTabs());
     safeRun('registerFacetFilter', () => registerFacetFilter());
     safeRun('initDashboard', () => initDashboard());
@@ -24993,3 +26699,5 @@
   else init();
 })();
 </script>
+
+

@@ -4,6 +4,24 @@ All notable changes to this repository are documented in this file.
 
 The format follows Keep a Changelog and semantic versioning.
 
+## [1.2.0] - 2026-02-14
+
+### Added
+- Addon self-update section in settings:
+  - GitHub release version check
+  - update status (up-to-date / update available)
+  - direct release link
+  - copy-ready PowerShell and shell update commands
+- New GitHub update scripts:
+  - `addon/scripts/update-from-github.ps1`
+  - `addon/scripts/update-from-github.sh`
+- Beginner documentation:
+  - `docs/NOOB_GUIDE.md`
+
+### Changed
+- Expanded root and addon README files with clearer install/update workflows.
+- Release guide now includes runtime version constant sync (`ADDON_RUNTIME_VERSION`).
+
 ## [1.1.0] - 2026-02-14
 
 ### Added

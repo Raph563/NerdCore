@@ -1,25 +1,41 @@
 # Grocy Advanced UI Addon Pack
 
-Ce dossier contient un pack partageable de l'addon Grocy (non-vanilla) base sur `custom_js.html`.
+Ce dossier contient le pack partageable de l'addon Grocy base sur `custom_js.html`.
 
-Le pack **n'inclut pas** tes donnees Grocy (produits, unites, stock, recettes, etc.).
+Le pack **n'inclut pas** tes donnees Grocy (stock, produits, recettes, etc.).
+
+Guide ultra detaille debutant:
+
+- `../docs/NOOB_GUIDE.md`
 
 ## Compatibilite guidee (premier lancement)
 
-L'addon propose au premier lancement un assistant de compatibilite pour creer les attributs personnalises
-produits recommandes (ex: marque, sous-marque, origine, SIQO, parent), **sans toucher a `userentity-Medicaments`**.
+L'addon propose un assistant de compatibilite qui peut:
 
-Tu peux aussi relancer cette operation plus tard via les parametres de l'addon (section "Compatibilite addon").
+- detecter les elements deja presents,
+- proposer des associations quand des noms ressemblent,
+- creer uniquement ce qui manque.
+
+Portee:
+
+- `product_groups`
+- `userentities`
+- `userfields`
+
+Tu peux relancer cela dans les parametres addon:
+
+- section `Compatibilite addon`
 
 ## Contenu
 
-- `dist/custom_js.html` : addon frontend a injecter dans Grocy.
-- `scripts/install.ps1` / `scripts/install.sh` : installation avec backup auto.
-- `scripts/uninstall.ps1` / `scripts/uninstall.sh` : retour arriere (restore backup).
-- `scripts/export-from-local.ps1` / `scripts/export-from-local.sh` : met a jour `dist/custom_js.html` depuis un Grocy local.
-- `docker-sidecar/` : installateur Docker sidecar.
+- `dist/custom_js.html`: payload frontend a injecter dans Grocy.
+- `scripts/install.ps1` / `scripts/install.sh`: installation avec backup.
+- `scripts/update-from-github.ps1` / `scripts/update-from-github.sh`: mise a jour depuis GitHub release.
+- `scripts/uninstall.ps1` / `scripts/uninstall.sh`: rollback.
+- `scripts/export-from-local.ps1` / `scripts/export-from-local.sh`: export local vers `dist/custom_js.html`.
+- `docker-sidecar/`: installateur sidecar Docker.
 
-## Option A - Installation locale (script)
+## Option A - Installation locale
 
 ### Windows (PowerShell)
 
@@ -27,8 +43,6 @@ Tu peux aussi relancer cette operation plus tard via les parametres de l'addon (
 cd addon\scripts
 .\install.ps1 -GrocyConfigPath "C:\path\to\grocy\config"
 ```
-
-Si `-GrocyConfigPath` est omis, le script tente `../config`.
 
 ### Linux/macOS
 
@@ -38,7 +52,29 @@ chmod +x install.sh
 ./install.sh /path/to/grocy/config
 ```
 
-Si le chemin est omis, le script tente `../config`.
+Si le chemin est omis, les scripts tentent `../config`.
+
+## Mise a jour locale depuis GitHub release
+
+### Windows (PowerShell)
+
+```powershell
+cd addon\scripts
+.\update-from-github.ps1 -Repository "Raph563/Grocy" -GrocyConfigPath "C:\path\to\grocy\config"
+```
+
+### Linux/macOS
+
+```bash
+cd addon/scripts
+chmod +x update-from-github.sh
+./update-from-github.sh --repository "Raph563/Grocy" --config /path/to/grocy/config
+```
+
+Options utiles:
+
+- version specifique: `-ReleaseTag "v1.2.3"` (PowerShell) ou `--tag v1.2.3` (shell)
+- sans backup: `-NoBackup` (PowerShell) ou `--no-backup` / `NO_BACKUP=1` (shell)
 
 ## Option B - Sidecar Docker
 
@@ -48,11 +84,11 @@ Depuis `addon/docker-sidecar`:
 docker compose -f docker-compose.example.yml run --rm grocy-addon
 ```
 
-Ce sidecar:
+Le sidecar:
 
-1. sauvegarde `custom_js.html` (backup timestamp),
+1. sauvegarde `custom_js.html`,
 2. copie `dist/custom_js.html` vers `config/data/custom_js.html`,
-3. ecrit un etat d'installation dans `config/data/grocy-addon-state.json`.
+3. ecrit `config/data/grocy-addon-state.json`.
 
 ## Desinstallation / rollback
 
@@ -73,26 +109,13 @@ chmod +x uninstall.sh
 
 ## Workflow GitHub recommande
 
-1. Versionner uniquement ce dossier `addon/`.
-2. Publier des tags/releases.
-3. A chaque evolution locale du `config/data/custom_js.html`, executer:
-
-Windows:
-
-```powershell
-cd addon\scripts
-.\export-from-local.ps1 -GrocyConfigPath "..\..\config"
-```
-
-Linux/macOS:
-
-```bash
-cd addon/scripts
-./export-from-local.sh ../../config
-```
+1. modifier l'addon,
+2. exporter depuis local si besoin (`export-from-local`),
+3. mettre a jour `addon/VERSION` + `CHANGELOG.md`,
+4. tag/release.
 
 ## Notes importantes
 
-- Ce pack remplace le fichier `custom_js.html` cible.
+- Ce pack remplace le fichier cible `config/data/custom_js.html`.
 - Les backups sont nommes `custom_js.html.bak_addon_YYYYMMDD_HHMMSS`.
-- Si tu veux 0 backup, utilise `-NoBackup` (PowerShell) ou `NO_BACKUP=1` (shell).
+- Un etat est ecrit dans `config/data/grocy-addon-state.json`.

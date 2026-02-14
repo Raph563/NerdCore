@@ -12,8 +12,10 @@ This document describes the standard release flow for this repository.
 
 1. Sync local addon changes into `addon/dist/custom_js.html` if needed.
 2. Update `addon/VERSION` (example: `1.2.0`).
-3. Update `CHANGELOG.md` with the same version.
-4. Commit changes.
+3. Update runtime version constant in `addon/dist/custom_js.html`:
+   - `const ADDON_RUNTIME_VERSION = 'X.Y.Z';`
+4. Update `CHANGELOG.md` with the same version.
+5. Commit changes.
 
 ## 2) Create and push tag
 
