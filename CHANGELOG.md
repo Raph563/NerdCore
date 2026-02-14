@@ -6,6 +6,16 @@ The format follows Keep a Changelog and semantic versioning.
 
 ## [Unreleased] - 2026-02-14
 
+- No entries yet.
+
+## [1.2.1-alpha.8] - 2026-02-14
+
+### Fixed
+- Chart cards now keep strictly isolated settings per card (`Top/Tout`, tri, `0+`, type), including safer preference key normalization.
+- Long labels are now truncated per chart card (compact and expanded views) to prevent overlap and unreadable axes.
+- `Valeur par groupe` and `Calories par groupe` no longer inject an `Autres` bucket in `Top` mode, so each top item remains independently readable.
+- Chart.js version detection now handles builds without `Chart.version`, avoiding inconsistent bar orientation/scales behavior.
+
 ### Changed
 - Project naming introduced: **Donne Atlas**.
 - Documentation restructured and split into FR/EN versions with cross-links.
