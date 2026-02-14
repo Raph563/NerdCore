@@ -8,6 +8,12 @@ The format follows Keep a Changelog and semantic versioning.
 
 - No entries yet.
 
+## [1.2.1-alpha.14] - 2026-02-14
+
+### Changed
+- On `Vérifier alpha/bêta`, update UI now keeps and displays only the **5 latest prereleases** (alpha/beta).
+- Update status calculation for prerelease checks now uses that same 5-release window (latest candidate from the capped list).
+
 ## [1.2.1-alpha.13] - 2026-02-14
 
 ### Fixed

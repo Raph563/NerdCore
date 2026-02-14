@@ -720,6 +720,7 @@
   const ADDON_UPDATE_DEFAULT_REPOSITORY = 'Raph563/Grocy';
   const ADDON_UPDATE_DEFAULT_LOCAL_ROOT = 'C:\\Users\\Admin\\Documents\\Docker\\grocy';
   const ADDON_UPDATE_RELAY_BASE_URL = 'http://127.0.0.1:17863';
+  const ADDON_UPDATE_PRERELEASE_VISIBLE_LIMIT = 5;
   const NO_DUE_SENTINEL_DATE = '2999-12-31';
   const STATNERD_AUTHOR_NAME = 'Raph563';
   const STATNERD_REPO_URL = 'https://github.com/Raph563/Grocy';
@@ -8227,9 +8228,12 @@
       if (includePrerelease) return row.prerelease === true;
       return row.prerelease !== true;
     });
-    const list = filtered
+    let list = filtered
       .map((row) => addonUpdateReleasePayloadToInfo(row, repo.repository))
       .filter(Boolean);
+    if (includePrerelease) {
+      list = list.slice(0, ADDON_UPDATE_PRERELEASE_VISIBLE_LIMIT);
+    }
     if (!list.length) {
       throw new Error(t('addon_update_status_release_missing'));
     }
@@ -9601,7 +9605,10 @@
     let finalState = null;
     try {
       await refreshAddonInstalledVersionFromFile();
-      const releases = await fetchAddonReleaseList(parts.repository, { includePrerelease, limit: 25 });
+      const releases = await fetchAddonReleaseList(
+        parts.repository,
+        { includePrerelease, limit: includePrerelease ? ADDON_UPDATE_PRERELEASE_VISIBLE_LIMIT : 25 }
+      );
       setAddonUpdateReleaseChoices(releases);
       const release = Array.isArray(releases) && releases.length ? releases[0] : null;
       if (!release) {
