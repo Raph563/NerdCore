@@ -1,0 +1,25 @@
+# OS / editor
+desktop.ini
+.DS_Store
+
+# Local Grocy runtime data (do not publish)
+config/data/grocy.db
+config/data/grocy.db.bak*
+config/data/viewcache/
+config/data/storage/
+config/log/
+config/keys/
+config/data/plugins/
+
+# Local custom runtime script (source of truth is addon/dist/custom_js.html)
+config/data/custom_js.html
+
+# Temp files
+tmp_*.csv
+*.tmp
+*.log
+
+# Keep distributable addon
+!addon/
+!addon/dist/
+!addon/dist/custom_js.html

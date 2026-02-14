@@ -1,0 +1,4 @@
+# Local generated or sensitive files
+*.bak
+*.tmp
+*.log

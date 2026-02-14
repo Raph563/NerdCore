@@ -1,0 +1,30 @@
+services:
+  grocy:
+    image: lscr.io/linuxserver/grocy:latest
+    container_name: grocy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - ../../config:/config
+    ports:
+      - "9283:80"
+    restart: unless-stopped
+
+  grocy-addon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: grocy-addon-installer
+    depends_on:
+      - grocy
+    environment:
+      - GROCY_CONFIG_PATH=/grocy-config
+      - ADDON_SOURCE=/addon/dist/custom_js.html
+      - BACKUP_ENABLED=true
+      - STATE_FILENAME=grocy-addon-state.json
+    volumes:
+      - ../../config:/grocy-config
+      - ../dist:/addon/dist:ro
+    restart: "no"
