@@ -3,13 +3,18 @@ desktop.ini
 .DS_Store
 
 # Local Grocy runtime data (do not publish)
+config/.migrations
+config/data/config.php
 config/data/grocy.db
 config/data/grocy.db.bak*
 config/data/viewcache/
 config/data/storage/
+config/data/settingoverrides/
 config/log/
 config/keys/
 config/data/plugins/
+config/data/grocy-addon-state.json
+config/data/custom_js.html.bak_addon_*
 
 # Local custom runtime script (source of truth is addon/dist/custom_js.html)
 config/data/custom_js.html
