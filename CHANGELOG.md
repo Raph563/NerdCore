@@ -8,6 +8,16 @@ The format follows Keep a Changelog and semantic versioning.
 
 - No entries yet.
 
+## [1.2.1-alpha.19] - 2026-02-15
+
+### Added
+- Added a dedicated LM Studio help action directly in AI provider settings (`LM Studio (local)` card).
+- Added a persistent floating LM Studio help window with:
+  - dedicated top-right close button (no auto-close on outside click)
+  - OS tabs: `Windows`, `macOS`, `Linux`
+  - ultra-simple step-by-step setup instructions (FR/EN UI-aware)
+  - white panel with 3-tone gray molded fake-3D visual style.
+
 ## [1.2.1-alpha.18] - 2026-02-14
 
 ### Fixed
