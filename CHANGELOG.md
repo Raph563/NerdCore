@@ -8,6 +8,27 @@ The format follows Keep a Changelog and semantic versioning.
 
 - No entries yet.
 
+## [2.2.0] - 2026-02-19
+
+### Added
+- Reintroduced missing `1.2.1-alpha.18/19` settings capabilities in stable line:
+  - Due date display format control (`auto`, `YYYY-MM-DD`, `DD/MM/YYYY`, `MM/DD/YYYY`) with live sample hint.
+  - Donne grouped settings layout/tabs (`general`, `product data`, `visuals`, `compat`, `providers`, `updates`).
+  - StatNerd about block in update settings (author, local version, release/changelog/docs links, selected release changelog).
+  - Addon update bridge controls for stable/prerelease check, local root picker, relay test/run, and release choice panel.
+
+### Changed
+- `initAiSettingsOverlay` behavior is aligned again with alpha stream:
+  - non-provider settings are persisted immediately on key runtime/interface changes,
+  - grouped settings structure is rebuilt consistently on overlay initialization.
+- `setAiSettingsBusyState` now handles the full update bridge controls plus user data transfer controls.
+- Due date formatting now supports UI-language aware display and relative phrasing (`today`, `overdue by ...`, `in ...`).
+
+### Fixed
+- Restored missing i18n keys (FR/EN) and styling for update changelog panel + grouped settings UI.
+- Restored missing addon update constants/state required by relay/update features.
+- Kept `2.1.0` user data transfer export/import section while re-adding alpha feature coverage.
+
 ## [2.1.0] - 2026-02-19
 
 ### Added
