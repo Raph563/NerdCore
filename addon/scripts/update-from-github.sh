@@ -4,15 +4,15 @@ set -eu
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ADDON_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 
-REPOSITORY="Raph563/Grocy"
+REPOSITORY="Raph563/NerdCore"
 TAG=""
 CONFIG_PATH=""
 NO_BACKUP="${NO_BACKUP:-0}"
 ALLOW_PRERELEASE=0
 ALLOW_DOWNGRADE=0
-PAYLOAD_FILE_NAME="${ADDON_PAYLOAD_FILENAME:-custom_js_nerdstats.html}"
+PAYLOAD_FILE_NAME="${ADDON_PAYLOAD_FILENAME:-custom_js_nerdcore.html}"
 ACTIVE_FILE_NAME="${ACTIVE_TARGET_FILENAME:-custom_js.html}"
-COMPOSE_SOURCES="${COMPOSE_SOURCES:-custom_js_nerdstats.html,custom_js_product_helper.html}"
+COMPOSE_SOURCES="${COMPOSE_SOURCES:-custom_js_nerdcore.html,custom_js_nerdstats.html,custom_js_product_helper.html}"
 COMPOSE_ENABLED="${COMPOSE_ENABLED:-1}"
 
 usage() {
@@ -96,7 +96,7 @@ fi
 DATA_DIR="$CONFIG_PATH/data"
 TARGET_FILE="$DATA_DIR/$PAYLOAD_FILE_NAME"
 ACTIVE_FILE="$DATA_DIR/$ACTIVE_FILE_NAME"
-STATE_FILE="$DATA_DIR/grocy-addon-state.json"
+STATE_FILE="$DATA_DIR/nerdcore-addon-state.json"
 
 if [ ! -d "$DATA_DIR" ]; then
 	mkdir -p "$DATA_DIR"
@@ -107,9 +107,9 @@ compose_custom_js() {
 		return 1
 	fi
 
-	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/grocy-addon-compose.XXXXXX")"
+	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/nerdcore-addon-compose.XXXXXX")"
 	trap 'rm -f "$TMP_FILE"' EXIT
-	printf '<!-- managed by update-from-github.sh (Grocy) -->\n' > "$TMP_FILE"
+	printf '<!-- managed by update-from-github.sh (NerdCore) -->\n' > "$TMP_FILE"
 
 	ADDED=0
 	OLD_IFS="$IFS"
@@ -248,7 +248,7 @@ for row in assets:
     if not isinstance(row, dict):
         continue
     name = str(row.get("name") or "")
-    if name.lower().startswith("grocy-addon-v") and name.lower().endswith(".zip"):
+    if name.lower().startswith("nerdcore-addon-v") and name.lower().endswith(".zip"):
         asset = row
         break
 if asset is None:
@@ -413,3 +413,4 @@ echo "Addon payload updated: $TARGET_FILE"
 echo "Active file composed: $ACTIVE_FILE"
 echo "Release: $RELEASE_TAG"
 echo "State: $STATE_FILE"
+

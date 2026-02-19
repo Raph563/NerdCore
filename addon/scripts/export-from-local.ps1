@@ -22,7 +22,7 @@ if ([string]::IsNullOrWhiteSpace($GrocyConfigPath))
 }
 
 $dataDir = Join-Path $GrocyConfigPath 'data'
-$sourceFile = Join-Path $dataDir 'custom_js_nerdstats.html'
+$sourceFile = Join-Path $dataDir 'custom_js_nerdcore.html'
 if (-not (Test-Path $sourceFile))
 {
 	$sourceFile = Join-Path $dataDir 'custom_js.html'
@@ -34,3 +34,4 @@ if (-not (Test-Path $sourceFile))
 
 Copy-Item $sourceFile $destFile -Force
 Write-Host "Export OK: $sourceFile -> $destFile"
+

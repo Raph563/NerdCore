@@ -1,5 +1,5 @@
 param(
-	[string]$Repository = 'Raph563/Grocy',
+	[string]$Repository = 'Raph563/NerdCore',
 	[string]$ReleaseTag = '',
 	[string]$GrocyConfigPath = '',
 	[switch]$NoBackup,
@@ -264,13 +264,13 @@ function Compose-CustomJs {
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $grocyConfigResolved = Resolve-GrocyConfigPath -ConfigPathInput $GrocyConfigPath -ScriptDir $scriptDir
 $dataDir = Join-Path $grocyConfigResolved 'data'
-$payloadFileName = if ($env:ADDON_PAYLOAD_FILENAME) { $env:ADDON_PAYLOAD_FILENAME } else { 'custom_js_nerdstats.html' }
+$payloadFileName = if ($env:ADDON_PAYLOAD_FILENAME) { $env:ADDON_PAYLOAD_FILENAME } else { 'custom_js_nerdcore.html' }
 $activeFileName = if ($env:ACTIVE_TARGET_FILENAME) { $env:ACTIVE_TARGET_FILENAME } else { 'custom_js.html' }
-$composeSourcesRaw = if ($env:COMPOSE_SOURCES) { $env:COMPOSE_SOURCES } else { 'custom_js_nerdstats.html,custom_js_product_helper.html' }
+$composeSourcesRaw = if ($env:COMPOSE_SOURCES) { $env:COMPOSE_SOURCES } else { 'custom_js_nerdcore.html,custom_js_nerdstats.html,custom_js_product_helper.html' }
 $composeEnabled = if ($env:COMPOSE_ENABLED) { $env:COMPOSE_ENABLED } else { '1' }
 $targetFile = Join-Path $dataDir $payloadFileName
 $activeFile = Join-Path $dataDir $activeFileName
-$stateFile = Join-Path $dataDir 'grocy-addon-state.json'
+$stateFile = Join-Path $dataDir 'nerdcore-addon-state.json'
 
 if (-not (Test-Path $dataDir))
 {
@@ -302,7 +302,7 @@ try
 	}
 
 	$assets = @($release.assets)
-	$asset = $assets | Where-Object { $_.name -match '^grocy-addon-v.+\.zip$' } | Select-Object -First 1
+	$asset = $assets | Where-Object { $_.name -match '^nerdcore-addon-v.+\.zip$' } | Select-Object -First 1
 	if (-not $asset)
 	{
 		$asset = $assets | Where-Object { $_.name -match '\.zip$' } | Select-Object -First 1
@@ -373,3 +373,4 @@ finally
 {
 	Remove-Item $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
+

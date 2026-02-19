@@ -4,10 +4,10 @@ set -eu
 GROCY_CONFIG_PATH="${GROCY_CONFIG_PATH:-/grocy-config}"
 ADDON_SOURCE="${ADDON_SOURCE:-/addon/dist/custom_js.html}"
 BACKUP_ENABLED="${BACKUP_ENABLED:-true}"
-STATE_FILENAME="${STATE_FILENAME:-grocy-addon-state.json}"
-ADDON_TARGET_FILENAME="${ADDON_TARGET_FILENAME:-custom_js_nerdstats.html}"
+STATE_FILENAME="${STATE_FILENAME:-nerdcore-addon-state.json}"
+ADDON_TARGET_FILENAME="${ADDON_TARGET_FILENAME:-custom_js_nerdcore.html}"
 ACTIVE_TARGET_FILENAME="${ACTIVE_TARGET_FILENAME:-custom_js.html}"
-COMPOSE_SOURCES="${COMPOSE_SOURCES:-custom_js_nerdstats.html,custom_js_product_helper.html}"
+COMPOSE_SOURCES="${COMPOSE_SOURCES:-custom_js_nerdcore.html,custom_js_nerdstats.html,custom_js_product_helper.html}"
 COMPOSE_ENABLED="${COMPOSE_ENABLED:-true}"
 KEEP_ALIVE="${KEEP_ALIVE:-false}"
 
@@ -42,9 +42,9 @@ compose_custom_js() {
 		chmod 0644 "$ACTIVE_FILE" 2>/dev/null || chmod a+r "$ACTIVE_FILE" 2>/dev/null || true
 		return 0
 	fi
-	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/grocy-addon-sidecar-compose.XXXXXX")"
+	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/nerdcore-addon-sidecar-compose.XXXXXX")"
 	trap 'rm -f "$TMP_FILE"' EXIT
-	printf '<!-- managed by docker-sidecar entrypoint (Grocy) -->\n' > "$TMP_FILE"
+	printf '<!-- managed by docker-sidecar entrypoint (NerdCore) -->\n' > "$TMP_FILE"
 	ADDED=0
 	OLD_IFS="$IFS"
 	IFS=','
@@ -96,3 +96,4 @@ if [ "$KEEP_ALIVE" = "true" ]; then
 	echo "Mode KEEP_ALIVE actif."
 	tail -f /dev/null
 fi
+

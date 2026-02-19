@@ -14,7 +14,7 @@ if [ -z "$CONFIG_PATH" ]; then
 	fi
 fi
 
-SOURCE_FILE="$CONFIG_PATH/data/custom_js_nerdstats.html"
+SOURCE_FILE="$CONFIG_PATH/data/custom_js_nerdcore.html"
 if [ ! -f "$SOURCE_FILE" ]; then
 	SOURCE_FILE="$CONFIG_PATH/data/custom_js.html"
 fi
@@ -27,3 +27,4 @@ fi
 
 cp "$SOURCE_FILE" "$DEST_FILE"
 echo "Export OK: $SOURCE_FILE -> $DEST_FILE"
+

@@ -1,9 +1,13 @@
-# StatNerd Addon Pack
+# NerdCore Addon Pack
 
-Français:
+Payload file:
+- `addon/dist/custom_js.html`
 
-- `README.fr.md`
+Install target:
+- `config/data/custom_js_nerdcore.html`
 
-English:
+Composed active file:
+- `config/data/custom_js.html`
 
-- `README.en.md`
+State file:
+- `config/data/nerdcore-addon-state.json`

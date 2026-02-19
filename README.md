@@ -1,42 +1,30 @@
-# StatNerd Core (Grocy)
+# NerdCore
 
-StatNerd Core is now focused on Grocy analytics and dashboard features:
-- KPIs
-- charts
-- rankings
-- AI focus overlay
-- addon compatibility/update tooling
+NerdCore is the shared base addon for Grocy.
 
-Product helper features (barcode robot, OFF/OPF product tools, photo helpers) moved to:
-- https://github.com/Raph563/Grocy_Product_Helper
+It is required by:
+- `Raph563/StatNerd`
+- `Raph563/ProductHelper`
 
-## Split Model
-
-- `Raph563/Grocy` => stats/charts core
-- `Raph563/Grocy_Product_Helper` => product workflow addon
-
-## Co-Install Support
-
-The install/update scripts now keep each addon isolated and compose the active Grocy payload automatically.
-
-- Core payload file: `config/data/custom_js_nerdstats.html`
-- Product payload file: `config/data/custom_js_product_helper.html`
+## Runtime files
+- Core payload: `config/data/custom_js_nerdcore.html`
 - Active composed file: `config/data/custom_js.html`
+- State file: `config/data/nerdcore-addon-state.json`
 
-So users can install only one addon, or both, without overwriting each other.
+## Settings UI
+NerdCore adds a menu entry in Grocy top-right `Settings` dropdown:
+- `NerdCore settings`
 
-## Docs
+It opens a dedicated page in Grocy style:
+- `/stocksettings?nerdcore=1`
 
-French:
-- `docs/README.fr.md`
-- `docs/RELEASING.fr.md`
+## Install
+Shell:
+```sh
+./addon/scripts/install.sh /path/to/grocy/config
+```
 
-English:
-- `docs/README.en.md`
-- `docs/RELEASING.en.md`
-
-## Release channels
-
-- stable: `vX.Y.Z`
-- alpha: `vX.Y.Z-alpha.N`
-- beta: `vX.Y.Z-beta.N`
+PowerShell:
+```powershell
+./addon/scripts/install.ps1 -GrocyConfigPath C:\path\to\grocy\config
+```

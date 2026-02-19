@@ -28,14 +28,14 @@ if ([string]::IsNullOrWhiteSpace($GrocyConfigPath))
 }
 
 $dataDir = Join-Path $GrocyConfigPath 'data'
-$payloadFileName = if ($env:ADDON_PAYLOAD_FILENAME) { $env:ADDON_PAYLOAD_FILENAME } else { 'custom_js_nerdstats.html' }
+$payloadFileName = if ($env:ADDON_PAYLOAD_FILENAME) { $env:ADDON_PAYLOAD_FILENAME } else { 'custom_js_nerdcore.html' }
 $activeFileName = if ($env:ACTIVE_TARGET_FILENAME) { $env:ACTIVE_TARGET_FILENAME } else { 'custom_js.html' }
-$composeSourcesRaw = if ($env:COMPOSE_SOURCES) { $env:COMPOSE_SOURCES } else { 'custom_js_nerdstats.html,custom_js_product_helper.html' }
+$composeSourcesRaw = if ($env:COMPOSE_SOURCES) { $env:COMPOSE_SOURCES } else { 'custom_js_nerdcore.html,custom_js_nerdstats.html,custom_js_product_helper.html' }
 $composeEnabled = if ($env:COMPOSE_ENABLED) { $env:COMPOSE_ENABLED } else { '1' }
 
 $targetFile = Join-Path $dataDir $payloadFileName
 $activeFile = Join-Path $dataDir $activeFileName
-$stateFile = Join-Path $dataDir 'grocy-addon-state.json'
+$stateFile = Join-Path $dataDir 'nerdcore-addon-state.json'
 
 function Compose-CustomJs {
 	param(
@@ -50,8 +50,8 @@ function Compose-CustomJs {
 	}
 
 	$sources = @($ComposeSourcesRaw.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-	$tmpFile = Join-Path ([System.IO.Path]::GetTempPath()) ("grocy-addon-compose-{0}.tmp" -f ([Guid]::NewGuid().ToString('N')))
-	$parts = @('<!-- managed by install.ps1 (Grocy) -->')
+	$tmpFile = Join-Path ([System.IO.Path]::GetTempPath()) ("nerdcore-addon-compose-{0}.tmp" -f ([Guid]::NewGuid().ToString('N')))
+	$parts = @('<!-- managed by install.ps1 (NerdCore) -->')
 	$added = 0
 
 	foreach ($src in $sources)
@@ -110,3 +110,4 @@ $state | ConvertTo-Json | Set-Content -Encoding UTF8 $stateFile
 Write-Host "Payload addon installe: $targetFile"
 Write-Host "Fichier actif compose: $activeFile"
 Write-Host "Etat: $stateFile"
+
