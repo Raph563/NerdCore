@@ -12,11 +12,16 @@ It is required by:
 - State file: `config/data/nerdcore-addon-state.json`
 
 ## Settings UI
-NerdCore adds a menu entry in Grocy top-right `Settings` dropdown:
-- `NerdCore settings`
+NerdCore adds 3 menu entries in Grocy top-right `Settings` dropdown:
+- `NerdCore settings` -> `/stocksettings?nerdcore=1`
+- `StatNerd settings` -> `/stocksettings?statnerd=1`
+- `ProductHelper settings` -> `/stocksettings?producthelper=1`
 
-It opens a dedicated page in Grocy style:
-- `/stocksettings?nerdcore=1`
+NerdCore page includes:
+- shared core settings
+- addon status table
+- update center (`Check update all` / `Install all` + per-addon actions)
+- VPS token field for `X-NerdCore-Token`
 
 ## Install
 Shell:

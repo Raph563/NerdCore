@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0] - 2026-02-19
+
+- Added native Grocy settings menu entries for:
+  - `/stocksettings?nerdcore=1`
+  - `/stocksettings?statnerd=1`
+  - `/stocksettings?producthelper=1`
+- Extended `window.NerdCore` API:
+  - `openSettingsPage(section)`
+  - `runUpdateCheck(target)`
+  - `runUpdateInstall(target, options)`
+  - update token getters/setters
+- Added NerdCore update center UI:
+  - token field + health test
+  - check/install all
+  - check/install per addon
+- Added VPS update service source: `services/nerdcore-update-api`.
+
 ## [1.0.0] - 2026-02-19
 
 - Initial standalone release for `NerdCore`.

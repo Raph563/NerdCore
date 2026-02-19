@@ -2,13 +2,27 @@
 (() => {
   'use strict';
 
-  const CORE_VERSION = '1.0.0';
+  const CORE_VERSION = '1.1.0';
   const STORAGE_KEY = 'grocy_nerdcore_settings_v1';
+  const TOKEN_STORAGE_KEY = 'grocy_nerdcore_update_token_v1';
+  const UPDATE_API_PATH = '/__nerdcore_update';
   const ADDONS = new Map();
+  const UPDATE_STATE = {
+    busyCheck: '',
+    busyInstall: '',
+    rows: new Map(),
+  };
+  const SECTION_META = {
+    nerdcore: { query: 'nerdcore', icon: 'fa-brain', menuKey: 'menu_label', addonId: 'nerdcore' },
+    statnerd: { query: 'statnerd', icon: 'fa-chart-line', menuKey: 'menu_label_statnerd', addonId: 'statnerd' },
+    producthelper: { query: 'producthelper', icon: 'fa-box-open', menuKey: 'menu_label_producthelper', addonId: 'producthelper' },
+  };
 
   const MESSAGES = {
     fr: {
       menu_label: 'Parametres NerdCore',
+      menu_label_statnerd: 'Parametres StatNerd',
+      menu_label_producthelper: 'Parametres ProductHelper',
       page_title: 'Parametres NerdCore',
       page_subtitle: 'NerdCore centralise les reglages communs et gere la dependance des addons.',
       core_group_title: 'Reglages communs',
@@ -28,10 +42,41 @@
       addon_status: 'Statut',
       addon_status_loaded: 'Charge',
       addon_status_waiting: 'En attente',
+      addon_action: 'Action',
+      addon_open: 'Ouvrir',
+      addon_not_installed: 'Addon non installe ou non charge: {{name}}',
+      addon_not_installed_hint: 'Installe l addon puis recharge la page.',
       open_settings_link: 'Ouvrir les parametres NerdCore',
+      update_group_title: 'Mise a jour globale',
+      update_group_hint: 'Check/Install all et actions individuelles via endpoint VPS securise.',
+      update_target: 'Cible',
+      update_local: 'Locale',
+      update_latest: 'Latest',
+      update_installed: 'Installee',
+      update_actions: 'Actions',
+      update_check_all: 'Check update all',
+      update_install_all: 'Install all',
+      update_check: 'Check',
+      update_install: 'Install',
+      update_token_label: 'Token API VPS',
+      update_token_save: 'Sauver token',
+      update_token_test: 'Tester connexion',
+      update_token_placeholder: 'X-NerdCore-Token',
+      update_token_saved: 'Token API sauvegarde.',
+      update_token_missing: 'Token manquant.',
+      update_health_ok: 'Connexion API OK.',
+      update_status_idle: 'Aucune operation en cours.',
+      update_status_checking: 'Verification en cours...',
+      update_status_installing: 'Installation en cours...',
+      update_status_error: 'Erreur: {{msg}}',
+      update_include_prerelease: 'Inclure prerelease',
+      update_no_backup: 'Sans backup',
+      default_unknown: '-',
     },
     en: {
       menu_label: 'NerdCore settings',
+      menu_label_statnerd: 'StatNerd settings',
+      menu_label_producthelper: 'ProductHelper settings',
       page_title: 'NerdCore settings',
       page_subtitle: 'NerdCore centralizes shared settings and enforces addon dependency.',
       core_group_title: 'Shared settings',
@@ -51,7 +96,36 @@
       addon_status: 'Status',
       addon_status_loaded: 'Loaded',
       addon_status_waiting: 'Waiting',
+      addon_action: 'Action',
+      addon_open: 'Open',
+      addon_not_installed: 'Addon not installed or not loaded: {{name}}',
+      addon_not_installed_hint: 'Install addon then reload this page.',
       open_settings_link: 'Open NerdCore settings',
+      update_group_title: 'Global updates',
+      update_group_hint: 'Check/Install all and individual actions via secure VPS endpoint.',
+      update_target: 'Target',
+      update_local: 'Local',
+      update_latest: 'Latest',
+      update_installed: 'Installed',
+      update_actions: 'Actions',
+      update_check_all: 'Check update all',
+      update_install_all: 'Install all',
+      update_check: 'Check',
+      update_install: 'Install',
+      update_token_label: 'VPS API token',
+      update_token_save: 'Save token',
+      update_token_test: 'Test connection',
+      update_token_placeholder: 'X-NerdCore-Token',
+      update_token_saved: 'API token saved.',
+      update_token_missing: 'Token missing.',
+      update_health_ok: 'API connection OK.',
+      update_status_idle: 'No operation in progress.',
+      update_status_checking: 'Checking...',
+      update_status_installing: 'Installing...',
+      update_status_error: 'Error: {{msg}}',
+      update_include_prerelease: 'Include prerelease',
+      update_no_backup: 'No backup',
+      default_unknown: '-',
     },
   };
 
@@ -70,6 +144,10 @@
       return window.Grocy.BaseUrl.replace(/\/+$/, '');
     }
     return `${window.location.protocol}//${window.location.host}`;
+  }
+
+  function updateApiBaseUrl() {
+    return `${baseUrl()}${UPDATE_API_PATH}`.replace(/\/+$/, '');
   }
 
   function detectBrowserLang() {
@@ -123,10 +201,16 @@
     return detectBrowserLang();
   }
 
-  function t(key) {
+  function t(key, vars = null) {
     const lang = currentLang();
     const dict = MESSAGES[lang] || MESSAGES.en;
-    return dict[key] || MESSAGES.en[key] || key;
+    let text = dict[key] || MESSAGES.en[key] || key;
+    if (vars && typeof vars === 'object') {
+      Object.keys(vars).forEach((name) => {
+        text = text.replaceAll(`{{${name}}}`, String(vars[name] == null ? '' : vars[name]));
+      });
+    }
+    return text;
   }
 
   function notify(message) {
@@ -135,6 +219,64 @@
       return;
     }
     console.info(message);
+  }
+
+  function tokenValue() {
+    try {
+      return clean(localStorage.getItem(TOKEN_STORAGE_KEY) || '');
+    } catch (_err) {
+      return '';
+    }
+  }
+
+  function saveTokenValue(nextToken) {
+    try {
+      localStorage.setItem(TOKEN_STORAGE_KEY, clean(nextToken || ''));
+      return true;
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  function normalizeSection(sectionInput = '') {
+    const section = clean(sectionInput || '').toLowerCase();
+    if (SECTION_META[section]) return section;
+    return 'nerdcore';
+  }
+
+  function currentSettingsSection() {
+    const view = clean(window.Grocy && window.Grocy.View ? window.Grocy.View : '').toLowerCase();
+    if (view !== 'stocksettings') return '';
+    const params = new URLSearchParams(window.location.search || '');
+    const sections = Object.keys(SECTION_META);
+    for (let i = 0; i < sections.length; i += 1) {
+      const section = sections[i];
+      const meta = SECTION_META[section];
+      if (params.get(meta.query) === '1') return section;
+    }
+    return '';
+  }
+
+  function collectAddonRows() {
+    const rows = [
+      { id: 'nerdcore', name: 'NerdCore', version: CORE_VERSION, settingsSection: 'nerdcore', loaded: true },
+      { id: 'statnerd', name: 'StatNerd', version: '', settingsSection: 'statnerd', loaded: false },
+      { id: 'producthelper', name: 'ProductHelper', version: '', settingsSection: 'producthelper', loaded: false },
+    ];
+    ADDONS.forEach((addon) => {
+      const index = rows.findIndex((row) => row.id === addon.id);
+      if (index >= 0) {
+        rows[index] = Object.assign({}, rows[index], addon, { loaded: true });
+      } else {
+        rows.push(Object.assign({ loaded: true }, addon));
+      }
+    });
+    return rows;
+  }
+
+  function addonBySection(sectionInput = '') {
+    const section = normalizeSection(sectionInput);
+    return collectAddonRows().find((row) => normalizeSection(row.settingsSection || row.id) === section) || null;
   }
 
   function applyLegacyVisibility() {
@@ -157,8 +299,10 @@
     document.head.appendChild(style);
   }
 
-  function openSettingsPage() {
-    const url = `${baseUrl()}/stocksettings?nerdcore=1`;
+  function openSettingsPage(sectionInput = 'nerdcore') {
+    const section = normalizeSection(sectionInput);
+    const meta = SECTION_META[section] || SECTION_META.nerdcore;
+    const url = `${baseUrl()}/stocksettings?${meta.query}=1`;
     window.location.href = url;
   }
 
@@ -170,42 +314,51 @@
   function ensureSettingsMenuEntry() {
     const stockAnchor = getSettingsMenuAnchor();
     if (!stockAnchor || !stockAnchor.parentNode) return;
-    if (document.getElementById('nerdcore-settings-link')) return;
+    const orderedSections = ['nerdcore', 'statnerd', 'producthelper'];
+    let cursor = stockAnchor;
 
-    const link = document.createElement('a');
-    link.id = 'nerdcore-settings-link';
-    link.className = stockAnchor.className || 'dropdown-item discrete-link';
-    link.href = `${baseUrl()}/stocksettings?nerdcore=1`;
-    link.innerHTML = '<i class="fa-solid fa-fw fa-brain"></i>&nbsp;' + t('menu_label');
-    link.title = t('open_settings_link');
-
-    if (stockAnchor.nextSibling) {
-      stockAnchor.parentNode.insertBefore(link, stockAnchor.nextSibling);
-    } else {
-      stockAnchor.parentNode.appendChild(link);
-    }
-  }
-
-  function isNerdCoreSettingsPage() {
-    const view = clean(window.Grocy && window.Grocy.View ? window.Grocy.View : '').toLowerCase();
-    if (view !== 'stocksettings') return false;
-    const params = new URLSearchParams(window.location.search || '');
-    return params.get('nerdcore') === '1';
+    orderedSections.forEach((section) => {
+      const meta = SECTION_META[section];
+      if (!meta) return;
+      const linkId = `nerdcore-settings-link-${section}`;
+      let link = document.getElementById(linkId);
+      if (!link) {
+        link = document.createElement('a');
+        link.id = linkId;
+        link.className = stockAnchor.className || 'dropdown-item discrete-link';
+      }
+      link.href = `${baseUrl()}/stocksettings?${meta.query}=1`;
+      link.innerHTML = `<i class="fa-solid fa-fw ${meta.icon}"></i>&nbsp;${escapeHtml(t(meta.menuKey))}`;
+      link.title = t('open_settings_link');
+      if (link.parentNode !== stockAnchor.parentNode) {
+        if (cursor.nextSibling) {
+          stockAnchor.parentNode.insertBefore(link, cursor.nextSibling);
+        } else {
+          stockAnchor.parentNode.appendChild(link);
+        }
+      }
+      cursor = link;
+    });
   }
 
   function addonRowsHtml() {
-    if (!ADDONS.size) {
+    const addons = collectAddonRows();
+    if (!addons.length) {
       return `<div class="small text-muted">${t('addon_none')}</div>`;
     }
 
-    const rows = Array.from(ADDONS.values()).map((addon) => {
+    const rows = addons.map((addon) => {
       const name = clean(addon.name || addon.id || 'addon');
-      const version = clean(addon.version || '-');
+      const version = clean(addon.version || t('default_unknown'));
+      const statusClass = addon.loaded ? 'badge-success' : 'badge-secondary';
+      const statusLabel = addon.loaded ? t('addon_status_loaded') : t('addon_status_waiting');
+      const section = normalizeSection(addon.settingsSection || addon.id);
       return `
         <tr>
           <td>${escapeHtml(name)}</td>
           <td>${escapeHtml(version)}</td>
-          <td><span class="badge badge-success">${escapeHtml(t('addon_status_loaded'))}</span></td>
+          <td><span class="badge ${statusClass}">${escapeHtml(statusLabel)}</span></td>
+          <td><button type="button" class="btn btn-outline-secondary btn-sm" data-nerdcore-open-section="${escapeHtml(section)}">${escapeHtml(t('addon_open'))}</button></td>
         </tr>
       `;
     }).join('');
@@ -218,6 +371,7 @@
               <th>${escapeHtml(t('addon_name'))}</th>
               <th>${escapeHtml(t('addon_version'))}</th>
               <th>${escapeHtml(t('addon_status'))}</th>
+              <th>${escapeHtml(t('addon_action'))}</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -235,11 +389,252 @@
       .replaceAll("'", '&#39;');
   }
 
+  function targetFromRepository(repositoryInput = '') {
+    const repo = clean(repositoryInput || '').toLowerCase();
+    if (repo.endsWith('/nerdcore')) return 'nerdcore';
+    if (repo.endsWith('/statnerd')) return 'statnerd';
+    if (repo.endsWith('/producthelper')) return 'producthelper';
+    return '';
+  }
+
+  function normalizeTarget(targetInput = '') {
+    const target = clean(targetInput || '').toLowerCase();
+    if (target === 'nerdcore' || target === 'statnerd' || target === 'producthelper' || target === 'all') {
+      return target;
+    }
+    return 'all';
+  }
+
+  function recordUpdateResults(payloadInput = null, fallbackTarget = 'all') {
+    const payload = payloadInput && typeof payloadInput === 'object' ? payloadInput : {};
+    const rows = Array.isArray(payload.results) ? payload.results : [];
+    const fallback = normalizeTarget(payload.target || fallbackTarget);
+    rows.forEach((row) => {
+      const target = normalizeTarget(row && row.target ? row.target : '') || targetFromRepository(row && row.repository ? row.repository : '') || fallback;
+      if (!target || target === 'all') return;
+      UPDATE_STATE.rows.set(target, Object.assign({}, UPDATE_STATE.rows.get(target) || {}, row || {}));
+    });
+    if (!rows.length && fallback !== 'all') {
+      UPDATE_STATE.rows.set(fallback, Object.assign({}, UPDATE_STATE.rows.get(fallback) || {}, payload || {}));
+    }
+  }
+
+  function updateRowsHtml() {
+    const targets = ['nerdcore', 'statnerd', 'producthelper'];
+    const addonRows = collectAddonRows();
+    const rows = targets.map((target) => {
+      const addon = addonRows.find((row) => row.id === target) || { name: target };
+      const state = UPDATE_STATE.rows.get(target) || {};
+      const local = clean(state.currentTag || state.localInstalledTag || state.localTag || t('default_unknown'));
+      const latest = clean(state.latestTag || t('default_unknown'));
+      const installed = clean(state.installedTag || state.localInstalledTag || t('default_unknown'));
+      const disableCheck = UPDATE_STATE.busyCheck === 'all' || UPDATE_STATE.busyCheck === target;
+      const disableInstall = UPDATE_STATE.busyInstall === 'all' || UPDATE_STATE.busyInstall === target;
+      return `
+        <tr>
+          <td>${escapeHtml(addon.name || target)}</td>
+          <td>${escapeHtml(local)}</td>
+          <td>${escapeHtml(latest)}</td>
+          <td>${escapeHtml(installed)}</td>
+          <td>
+            <button type="button" class="btn btn-outline-info btn-sm mr-1" data-nerdcore-check="${escapeHtml(target)}" ${disableCheck ? 'disabled' : ''}>${escapeHtml(t('update_check'))}</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" data-nerdcore-install="${escapeHtml(target)}" ${disableInstall ? 'disabled' : ''}>${escapeHtml(t('update_install'))}</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="d-flex flex-wrap align-items-center mb-2">
+        <button id="nerdcore_check_all" type="button" class="btn btn-outline-info btn-sm mr-2 mb-1">${escapeHtml(t('update_check_all'))}</button>
+        <button id="nerdcore_install_all" type="button" class="btn btn-outline-primary btn-sm mr-3 mb-1">${escapeHtml(t('update_install_all'))}</button>
+        <div class="custom-control custom-switch mr-3 mb-1">
+          <input type="checkbox" class="custom-control-input" id="nerdcore_include_prerelease">
+          <label class="custom-control-label" for="nerdcore_include_prerelease">${escapeHtml(t('update_include_prerelease'))}</label>
+        </div>
+        <div class="custom-control custom-switch mb-1">
+          <input type="checkbox" class="custom-control-input" id="nerdcore_no_backup">
+          <label class="custom-control-label" for="nerdcore_no_backup">${escapeHtml(t('update_no_backup'))}</label>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead>
+            <tr>
+              <th>${escapeHtml(t('update_target'))}</th>
+              <th>${escapeHtml(t('update_local'))}</th>
+              <th>${escapeHtml(t('update_latest'))}</th>
+              <th>${escapeHtml(t('update_installed'))}</th>
+              <th>${escapeHtml(t('update_actions'))}</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function setUpdateStatus(message, level = 'muted') {
+    const node = document.getElementById('nerdcore_update_status');
+    if (!node) return;
+    node.className = `small mt-2 text-${level}`;
+    node.textContent = clean(message || '') || t('update_status_idle');
+  }
+
+  async function callUpdateApi(pathInput = '', method = 'GET', bodyInput = null) {
+    const token = tokenValue();
+    if (!token) throw new Error(t('update_token_missing'));
+    const path = String(pathInput || '').replace(/^\/+/, '');
+    const response = await fetch(`${updateApiBaseUrl()}/${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-NerdCore-Token': token,
+      },
+      body: bodyInput ? JSON.stringify(bodyInput) : undefined,
+      cache: 'no-store',
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload || payload.ok !== true) {
+      const msg = clean(payload && (payload.error || payload.message) ? (payload.error || payload.message) : '') || `${response.status} ${response.statusText}`.trim();
+      throw new Error(msg || 'request failed');
+    }
+    return payload;
+  }
+
+  async function runUpdateCheck(targetInput = 'all', optionsInput = {}) {
+    const target = normalizeTarget(targetInput);
+    const options = optionsInput && typeof optionsInput === 'object' ? optionsInput : {};
+    UPDATE_STATE.busyCheck = target;
+    syncUpdateCenter();
+    setUpdateStatus(t('update_status_checking'), 'info');
+    try {
+      const payload = await callUpdateApi('v1/check', 'POST', {
+        target,
+        includePrerelease: options.includePrerelease === true,
+      });
+      recordUpdateResults(payload, target);
+      setUpdateStatus(t('update_health_ok'), 'success');
+      syncUpdateCenter();
+      return payload;
+    } finally {
+      UPDATE_STATE.busyCheck = '';
+      syncUpdateCenter();
+    }
+  }
+
+  async function runUpdateInstall(targetInput = 'all', optionsInput = {}) {
+    const target = normalizeTarget(targetInput);
+    const options = optionsInput && typeof optionsInput === 'object' ? optionsInput : {};
+    UPDATE_STATE.busyInstall = target;
+    syncUpdateCenter();
+    setUpdateStatus(t('update_status_installing'), 'info');
+    try {
+      const payload = await callUpdateApi('v1/install', 'POST', {
+        target,
+        includePrerelease: options.includePrerelease === true,
+        noBackup: options.noBackup === true,
+        releaseTags: options.releaseTags && typeof options.releaseTags === 'object' ? options.releaseTags : {},
+      });
+      recordUpdateResults(payload, target);
+      setUpdateStatus(t('update_health_ok'), 'success');
+      syncUpdateCenter();
+      return payload;
+    } finally {
+      UPDATE_STATE.busyInstall = '';
+      syncUpdateCenter();
+    }
+  }
+
+  function syncAddonTable() {
+    const table = document.getElementById('nerdcore_addons_table');
+    if (!table) return;
+    table.innerHTML = addonRowsHtml();
+    table.querySelectorAll('[data-nerdcore-open-section]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const target = event.currentTarget;
+        if (!target) return;
+        openSettingsPage(clean(target.getAttribute('data-nerdcore-open-section') || 'nerdcore'));
+      });
+    });
+  }
+
+  function syncUpdateCenter() {
+    const host = document.getElementById('nerdcore_update_table');
+    if (!host) return;
+    host.innerHTML = updateRowsHtml();
+    const includePre = document.getElementById('nerdcore_include_prerelease');
+    const noBackup = document.getElementById('nerdcore_no_backup');
+    const options = {
+      includePrerelease: !!(includePre && includePre.checked),
+      noBackup: !!(noBackup && noBackup.checked),
+    };
+
+    host.querySelector('#nerdcore_check_all')?.addEventListener('click', async () => {
+      try {
+        await runUpdateCheck('all', options);
+      } catch (error) {
+        setUpdateStatus(t('update_status_error', { msg: clean(error && error.message ? error.message : String(error)) }), 'danger');
+      }
+    });
+    host.querySelector('#nerdcore_install_all')?.addEventListener('click', async () => {
+      try {
+        await runUpdateInstall('all', options);
+      } catch (error) {
+        setUpdateStatus(t('update_status_error', { msg: clean(error && error.message ? error.message : String(error)) }), 'danger');
+      }
+    });
+    host.querySelectorAll('[data-nerdcore-check]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        const target = clean(event.currentTarget?.getAttribute('data-nerdcore-check') || '');
+        try {
+          await runUpdateCheck(target, options);
+        } catch (error) {
+          setUpdateStatus(t('update_status_error', { msg: clean(error && error.message ? error.message : String(error)) }), 'danger');
+        }
+      });
+    });
+    host.querySelectorAll('[data-nerdcore-install]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        const target = clean(event.currentTarget?.getAttribute('data-nerdcore-install') || '');
+        try {
+          await runUpdateInstall(target, options);
+        } catch (error) {
+          setUpdateStatus(t('update_status_error', { msg: clean(error && error.message ? error.message : String(error)) }), 'danger');
+        }
+      });
+    });
+  }
+
   function renderSettingsPage() {
-    if (!isNerdCoreSettingsPage()) return;
+    const section = currentSettingsSection();
+    if (!section) return;
+
+    if (section !== 'nerdcore') {
+      const addon = addonBySection(section);
+      if (addon && addon.loaded) return;
+      const pageContent = document.getElementById('page-content');
+      if (!pageContent) return;
+      pageContent.innerHTML = `
+        <div class="row">
+          <div class="col">
+            <h2 class="title">${escapeHtml(t(SECTION_META[section]?.menuKey || 'menu_label'))}</h2>
+            <div class="small text-muted mb-2">${escapeHtml(t('addon_not_installed', { name: addon && addon.name ? addon.name : section }))}</div>
+          </div>
+        </div>
+        <hr class="my-2">
+        <div class="card">
+          <div class="card-body">
+            <div class="small text-muted">${escapeHtml(t('addon_not_installed_hint'))}</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     const pageContent = document.getElementById('page-content');
     if (!pageContent) return;
-
     pageContent.innerHTML = `
       <div class="row">
         <div class="col">
@@ -279,15 +674,32 @@
           </div>
         </div>
       </div>
+      <div class="row">
+        <div class="col-12 mb-3">
+          <div class="card">
+            <div class="card-header font-weight-bold">${escapeHtml(t('update_group_title'))}</div>
+            <div class="card-body">
+              <div class="form-group mb-2">
+                <label for="nerdcore_update_token">${escapeHtml(t('update_token_label'))}</label>
+                <input id="nerdcore_update_token" type="password" class="form-control" value="${escapeHtml(tokenValue())}" placeholder="${escapeHtml(t('update_token_placeholder'))}">
+                <div class="mt-2">
+                  <button id="nerdcore_token_save" type="button" class="btn btn-outline-secondary btn-sm mr-2">${escapeHtml(t('update_token_save'))}</button>
+                  <button id="nerdcore_token_test" type="button" class="btn btn-outline-info btn-sm">${escapeHtml(t('update_token_test'))}</button>
+                </div>
+              </div>
+              <div id="nerdcore_update_table">${updateRowsHtml()}</div>
+              <div id="nerdcore_update_status" class="small mt-2 text-muted">${escapeHtml(t('update_status_idle'))}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
 
     const langSelect = document.getElementById('nerdcore_ui_lang_mode');
     const legacySwitch = document.getElementById('nerdcore_hide_legacy');
     const saveBtn = document.getElementById('nerdcore_save_btn');
-
     if (langSelect) langSelect.value = SETTINGS.uiLanguageMode || 'auto';
     if (legacySwitch) legacySwitch.checked = SETTINGS.hideLegacyAddonSettings !== false;
-
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
         const next = Object.assign({}, SETTINGS, {
@@ -299,18 +711,42 @@
         notify(t('saved_ok'));
       });
     }
+    document.getElementById('nerdcore_token_save')?.addEventListener('click', () => {
+      saveTokenValue(document.getElementById('nerdcore_update_token')?.value || '');
+      setUpdateStatus(t('update_token_saved'), 'success');
+    });
+    document.getElementById('nerdcore_token_test')?.addEventListener('click', async () => {
+      const token = clean(document.getElementById('nerdcore_update_token')?.value || '');
+      saveTokenValue(token);
+      if (!token) {
+        setUpdateStatus(t('update_token_missing'), 'warning');
+        return;
+      }
+      try {
+        await callUpdateApi('health', 'GET');
+        setUpdateStatus(t('update_health_ok'), 'success');
+      } catch (error) {
+        setUpdateStatus(t('update_status_error', { msg: clean(error && error.message ? error.message : String(error)) }), 'danger');
+      }
+    });
+    syncAddonTable();
+    syncUpdateCenter();
   }
 
   function registerAddon(meta) {
-    const id = clean(meta && meta.id ? meta.id : '');
+    const id = clean(meta && meta.id ? meta.id : '').toLowerCase();
     if (!id) return;
     ADDONS.set(id, {
       id,
       name: clean(meta && meta.name ? meta.name : id),
       version: clean(meta && meta.version ? meta.version : ''),
+      settingsSection: normalizeSection(meta && meta.settingsSection ? meta.settingsSection : id),
+      settingsTitle: clean(meta && meta.settingsTitle ? meta.settingsTitle : ''),
+      settingsIcon: clean(meta && meta.settingsIcon ? meta.settingsIcon : ''),
+      loaded: true,
     });
-    const table = document.getElementById('nerdcore_addons_table');
-    if (table) table.innerHTML = addonRowsHtml();
+    syncAddonTable();
+    syncUpdateCenter();
     window.dispatchEvent(new CustomEvent('nerdcore:addon-registered', { detail: { id } }));
   }
 
@@ -328,6 +764,11 @@
     saveSettings: (next) => saveSettings(next),
     getUiLanguage: () => currentLang(),
     isLegacySettingsDisabled: () => SETTINGS.hideLegacyAddonSettings !== false,
+    getUpdateApiBase: () => updateApiBaseUrl(),
+    getUpdateToken: () => tokenValue(),
+    setUpdateToken: (value) => saveTokenValue(value),
+    runUpdateCheck,
+    runUpdateInstall,
     t,
   };
 
