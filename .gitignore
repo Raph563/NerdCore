@@ -29,3 +29,6 @@ tmp_*.csv
 !addon/
 !addon/dist/
 !addon/dist/custom_js.html
+
+services/nerdcore-update-api/__pycache__/
+services/nerdcore-update-api/*.pyc
