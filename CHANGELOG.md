@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.0] - 2026-02-19
+## [4.0.0] - 2026-02-19
 
 - Added native Grocy settings menu entries for:
   - `/stocksettings?nerdcore=1`
