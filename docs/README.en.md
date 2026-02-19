@@ -2,6 +2,12 @@
 
 StatNerd is an advanced addon for Grocy.
 
+Since the 2026-02-19 split:
+
+- This `Raph563/Grocy` repo covers the core line (stats + charts).
+- Product workflows (OFF/OPF, barcode robot, photo helpers) are maintained in:
+  - `https://github.com/Raph563/Grocy_Product_Helper`
+
 Main capabilities:
 
 - Stock analytics dashboard (KPIs, charts, rankings).

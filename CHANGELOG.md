@@ -4,9 +4,18 @@ All notable changes to this repository are documented in this file.
 
 The format follows Keep a Changelog and semantic versioning.
 
-## [Unreleased] - 2026-02-14
+## [Unreleased] - 2026-02-19
 
-- No entries yet.
+### Changed
+- Major split applied:
+  - `Raph563/Grocy` now focuses on stats/charts core.
+  - Product helper features moved to `Raph563/Grocy_Product_Helper`.
+- Product helper initialization was removed from core startup (`custom_js` init), keeping this payload dashboard-focused.
+- AI settings labels/tabs cleanup applied (placeholder keys no longer shown).
+
+### Migration
+- For OFF/OPF barcode robot and product helper flows, install:
+  - `https://github.com/Raph563/Grocy_Product_Helper`
 
 ## [2.2.0] - 2026-02-19
 

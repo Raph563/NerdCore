@@ -1,33 +1,32 @@
-# StatNerd
+# StatNerd Core (Grocy)
 
-Addon avancé pour Grocy avec analytics, compatibilité assistée, IA multi-provider et releases GitHub automatisées.
+StatNerd Core is now focused on Grocy analytics and dashboard features:
+- KPIs
+- charts
+- rankings
+- AI focus overlay
+- addon compatibility/update tooling
 
-Advanced addon for Grocy with analytics, guided compatibility, multi-provider AI, and automated GitHub releases.
+Product helper features (barcode robot, OFF/OPF product tools, photo helpers) moved to:
+- https://github.com/Raph563/Grocy_Product_Helper
 
-> Projet indépendant de Grocy officiel.
->
-> Independent from the official Grocy project.
+## Split Model
 
-## Documentation
+- `Raph563/Grocy` => stats/charts core
+- `Raph563/Grocy_Product_Helper` => product workflow addon
 
-Français:
+## Docs
 
-- Vue d'ensemble: `docs/README.fr.md`
-- Publication des releases: `docs/RELEASING.fr.md`
-- Guide débutant (pas à pas): `docs/NOOB_GUIDE.fr.md`
-- Pack addon: `addon/README.fr.md`
-- App desktop update relay (Windows/macOS): https://github.com/Raph563/StatNerd_Update_Relay
+French:
+- `docs/README.fr.md`
+- `docs/RELEASING.fr.md`
 
 English:
+- `docs/README.en.md`
+- `docs/RELEASING.en.md`
 
-- Overview: `docs/README.en.md`
-- Release publishing: `docs/RELEASING.en.md`
-- Beginner guide (step-by-step): `docs/NOOB_GUIDE.en.md`
-- Addon pack: `addon/README.en.md`
-- Desktop update relay app (Windows/macOS): https://github.com/Raph563/StatNerd_Update_Relay
+## Release channels
 
-## Release Channels
-
-- `alpha` (automatic on each push to `main`): `vX.Y.Z-alpha.N`
-- `beta`: `vX.Y.Z-beta.N`
-- `stable`: `vX.Y.Z`
+- stable: `vX.Y.Z`
+- alpha: `vX.Y.Z-alpha.N`
+- beta: `vX.Y.Z-beta.N`

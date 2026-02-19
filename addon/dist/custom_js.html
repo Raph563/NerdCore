@@ -1460,7 +1460,7 @@
       overlay_focus_ai_settings_btn: 'Paramètres IA',
       overlay_focus_bucket_see_more: 'Voir plus',
       overlay_focus_bucket_show_more: 'Afficher plus',
-      ai_settings_title: 'Paramètres IA multi-agents',
+      ai_settings_title: 'Paramètres StatNerd',
       ai_settings_close: 'Fermer',
       ai_enable_focus: 'Activer l’agent IA sur le focus plein écran',
       ai_provider_active: 'Fournisseur actif',
@@ -1958,6 +1958,18 @@
       due_date_format_ymd: 'YYYY-MM-DD',
       due_date_format_dmy: 'DD/MM/YYYY',
       due_date_format_mdy: 'MM/DD/YYYY',
+      settings_tabs_general: 'Général',
+      settings_tabs_product_data: 'Données produit',
+      settings_tabs_visuals: 'Visuels',
+      settings_tabs_compat: 'Compatibilité',
+      settings_tabs_providers: 'Fournisseurs IA',
+      settings_tabs_update: 'Mise à jour',
+      settings_group_general: 'Réglages généraux',
+      settings_group_product_data: 'Données produit (OFF/OPF)',
+      settings_group_visuals: 'Visuels',
+      settings_group_compat: 'Compatibilité',
+      settings_group_providers: 'Fournisseurs IA',
+      settings_group_update: 'Mise à jour et infos StatNerd',
       settings_group_expand: '(ouvrir)',
       settings_group_reduce: '(réduire)',
       statnerd_about_author: 'Auteur: {{author}}',
@@ -2111,7 +2123,7 @@
       overlay_focus_ai_settings_btn: 'AI settings',
       overlay_focus_bucket_see_more: 'See more',
       overlay_focus_bucket_show_more: 'Show more',
-      ai_settings_title: 'Multi-agent AI settings',
+      ai_settings_title: 'StatNerd settings',
       ai_settings_close: 'Close',
       ai_enable_focus: 'Enable AI agent on fullscreen focus',
       ai_provider_active: 'Active provider',
@@ -2609,6 +2621,18 @@
       due_date_format_ymd: 'YYYY-MM-DD',
       due_date_format_dmy: 'DD/MM/YYYY',
       due_date_format_mdy: 'MM/DD/YYYY',
+      settings_tabs_general: 'General',
+      settings_tabs_product_data: 'Product data',
+      settings_tabs_visuals: 'Visuals',
+      settings_tabs_compat: 'Compatibility',
+      settings_tabs_providers: 'AI providers',
+      settings_tabs_update: 'Updates',
+      settings_group_general: 'General settings',
+      settings_group_product_data: 'Product data (OFF/OPF)',
+      settings_group_visuals: 'Visuals',
+      settings_group_compat: 'Compatibility',
+      settings_group_providers: 'AI providers',
+      settings_group_update: 'Updates and StatNerd info',
       settings_group_expand: '(open)',
       settings_group_reduce: '(collapse)',
       statnerd_about_author: 'Author: {{author}}',
@@ -25487,6 +25511,40 @@
         white-space: normal;
         overflow-wrap: anywhere;
       }
+      #grocy-barcode-header-robot-card {
+        display: block;
+        width: 100%;
+        flex: 0 0 100%;
+        order: 50;
+        margin-top: 0.7rem;
+      }
+      #grocy-barcode-header-robot-card.d-none {
+        display: none !important;
+      }
+      #grocy-barcode-header-robot-card .grocy-barcode-robot-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.55rem;
+        width: 100%;
+        border: 1px solid rgba(90, 210, 255, 0.72);
+        border-radius: 0.35rem;
+        padding: 0.48rem 0.58rem;
+        background: rgba(7, 18, 28, 0.6);
+      }
+      #grocy-barcode-header-robot-card .grocy-barcode-robot-card img {
+        width: 52px;
+        height: 52px;
+        object-fit: cover;
+        border-radius: 0.35rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+      }
+      #grocy-barcode-header-robot-card .grocy-barcode-robot-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.1rem;
+        min-width: 0;
+      }
       .grocy-off-btn-sm {
         min-width: 2rem;
         height: 1.75rem;
@@ -27562,7 +27620,7 @@
     if (!headingRobotCard) {
       headingRobotCard = document.createElement('div');
       headingRobotCard.id = 'grocy-barcode-header-robot-card';
-      headingRobotCard.className = 'mt-2 d-none';
+      headingRobotCard.className = 'mt-3 d-none';
       titleWrap.appendChild(headingRobotCard);
     }
 
@@ -27589,25 +27647,23 @@
       const sourceUrl = clean(selection.sourceUrl || '');
       const imageUrl = /^https?:\/\//i.test(clean(selection.imageUrl || '')) ? clean(selection.imageUrl || '') : '';
       const sourceName = clean(selection.sourceDisplayName || '') || t('default_na');
+      const brandName = clean(selection.brand || '');
+      const quantityLabel = clean(selection.quantity || '');
       const previewImageHtml = imageUrl
         ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(productName)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,.08);">`
         : `<div class="d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:8px;border:1px dashed rgba(0,0,0,.2);font-size:11px;line-height:1;color:#6c757d;">${escapeHtml(providerLabel)}</div>`;
       headingRobotCard.innerHTML = `
-        <button
-          type="button"
-          class="btn btn-outline-info btn-sm w-100 text-left d-flex align-items-center"
-          data-facts-robot-confirm="1"
-          title="${escapeHtml(langText('Cliquer pour confirmer cette fiche et créer le code-barres', 'Click to confirm this product card and create barcode'))}"
-          aria-label="${escapeHtml(langText('Confirmer la fiche produit', 'Confirm product card'))}"
-        >
+        <div class="grocy-barcode-robot-card">
           <span class="mr-2">${previewImageHtml}</span>
-          <span class="d-flex flex-column align-items-start">
+          <span class="grocy-barcode-robot-meta">
             <span class="small text-muted">${escapeHtml(`${providerLabel} - ${sourceName}`)}</span>
             <span class="font-weight-bold">${escapeHtml(productName)}</span>
             <span class="small">${escapeHtml(langText('Code-barres', 'Barcode'))}: ${escapeHtml(code)}</span>
-            <span class="small text-primary">${escapeHtml(langText('Clique cette fiche pour valider la création du code-barres', 'Click this product card to confirm barcode creation'))}</span>
+            ${brandName ? `<span class="small">${escapeHtml(langText('Marque', 'Brand'))}: ${escapeHtml(brandName)}</span>` : ''}
+            ${quantityLabel ? `<span class="small">${escapeHtml(langText('Poids/quantité', 'Weight/quantity'))}: ${escapeHtml(quantityLabel)}</span>` : ''}
+            <span class="small text-info">${escapeHtml(langText('Création automatique activée (recherche avancée).', 'Automatic creation enabled (advanced lookup).'))}</span>
           </span>
-        </button>
+        </div>
         <div class="mt-1">
           ${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(langText('Ouvrir la fiche source', 'Open source product page'))}</a>` : ''}
         </div>
@@ -27615,7 +27671,6 @@
       headingRobotCard.classList.remove('d-none');
     };
 
-    let canRetryHeaderRobot = false;
     const refreshState = () => {
       const parentMode = isProductParentModeEnabled();
       const hasBarcodeTable = !!document.getElementById('barcode-table');
@@ -27656,8 +27711,8 @@
       opfButton.disabled = !hasName;
       googleButton.disabled = !hasName;
       robotButton.disabled = !hasName || settings.enabled !== true || productId <= 0 || purchaseUnitId <= 0;
-      robotRetryButton.classList.toggle('d-none', !canRetryHeaderRobot);
-      robotRetryButton.disabled = robotButton.disabled;
+      robotRetryButton.classList.add('d-none');
+      robotRetryButton.disabled = true;
 
       if (robotButton.disabled && settings.enabled !== true) {
         setHeadingStatus(t('facts_provider_disabled'), 'muted');
@@ -27829,7 +27884,7 @@
       });
     }
 
-    const runHeaderRobotCreate = async (useFallbackChain = false) => {
+    const runHeaderRobotCreate = async (useFallbackChain = true) => {
         if (isProductParentModeEnabled()) {
           setHeadingStatus(langText('Mode parent actif: section code-barres masquée.', 'Parent mode active: barcode section hidden.'), 'warning');
           refreshState();
@@ -27866,21 +27921,20 @@
 
         const configuredProviderOrder = barcodeLookupProviderOrder(settings);
         let shouldReload = false;
-        let awaitingConfirmation = false;
         let finalError = '';
         let usedName = '';
         let bestName = '';
         let bestCode = '';
+        let bestBrand = '';
+        let bestQuantity = '';
         let createdAmount = 0;
         let attemptedProviders = [];
         let sourceProviderLabel = '';
         let sourceProviderId = '';
         let sourceUrl = '';
         let sourceImageUrl = '';
-        canRetryHeaderRobot = false;
         clearPendingHeaderRobotSelection(true);
         setButtonBusy(robotButton, true);
-        if (useFallbackChain) setButtonBusy(robotRetryButton, true);
         setHeadingStatus(
           langText('1/3 Recherche du code-barres…', '1/3 Searching barcode...'),
           'info',
@@ -27888,17 +27942,17 @@
             `${langText('Produit', 'Product')}: ${productName}`,
             `${langText('Unité utilisée', 'Used unit')}: ${purchaseUnitName} (#${purchaseUnitId})`,
             `${langText('Fournisseurs configurés', 'Configured providers')}: ${configuredProviderOrder.map((id) => barcodeLookupProviderLabel(id)).join(' -> ') || t('default_na')}`,
-            `${langText('Mode', 'Mode')}: ${useFallbackChain ? langText('Relance avec simplification', 'Retry with simplification') : langText('Recherche standard', 'Standard lookup')}`,
+            `${langText('Mode', 'Mode')}: ${langText('Recherche avancée automatique', 'Automatic advanced lookup')}`,
           ]
         );
         try {
-          const lookup = useFallbackChain
-            ? await lookupBestBarcodeForProductNameFallbackChain(productName, settings, { limit: 14 })
-            : await lookupBestBarcodeForProductName(productName, settings);
+          const lookup = await lookupBestBarcodeForProductNameFallbackChain(productName, settings, { limit: 14 });
           const { best } = lookup;
           usedName = clean(lookup.usedName || '');
           bestName = clean(best && best.name ? best.name : '');
           bestCode = clean(best && best.code ? best.code : '');
+          bestBrand = clean(best?.brand || '');
+          bestQuantity = clean(best?.quantity || '');
           attemptedProviders = Array.isArray(lookup.attemptedProviders) && lookup.attemptedProviders.length > 0
             ? lookup.attemptedProviders
             : [];
@@ -27915,7 +27969,6 @@
 
           const amount = currentProductBarcodeDefaultAmount();
           createdAmount = amount;
-          awaitingConfirmation = true;
           renderPendingHeaderRobotSelection({
             productId,
             productName,
@@ -27924,6 +27977,8 @@
             amount,
             code: best.code,
             name: bestName || langText('produit API', 'API product'),
+            brand: bestBrand,
+            quantity: bestQuantity,
             attemptedProviders,
             providerId: sourceProviderId,
             providerLabel: sourceProviderLabel,
@@ -27932,20 +27987,34 @@
             imageUrl: sourceImageUrl,
           });
           setHeadingStatus(
-            langText('2/3 Fiche OFF/OPF trouvée. Clique sur la fiche pour créer ce code-barres.', '2/3 OFF/OPF product card ready. Click the card to create this barcode.'),
+            langText('2/3 Fiche OFF/OPF trouvée. Création automatique en cours…', '2/3 OFF/OPF product card found. Automatic creation in progress...'),
             'info',
             [
               `${langText('Code trouvé', 'Found barcode')}: ${best.code}`,
               `${langText('Nom source', 'Source name')}: ${bestName || t('default_na')}`,
+              `${langText('Marque', 'Brand')}: ${bestBrand || t('default_na')}`,
+              `${langText('Poids/quantité', 'Weight/quantity')}: ${bestQuantity || t('default_na')}`,
               `${langText('Source', 'Source')}: ${sourceProviderLabel || t('default_na')}`,
               `${langText('Fournisseurs tentés', 'Attempted providers')}: ${(attemptedProviders.map((id) => barcodeLookupProviderLabel(id)).join(' -> ') || t('default_na'))}`,
             ]
           );
+          await createProductBarcodeViaApi({
+            productId,
+            barcode: best.code,
+            quId: purchaseUnitId,
+            amount,
+            shoppingLocationId: null,
+          });
+          const providers = attemptedProviders.map((providerId) => barcodeLookupProviderLabel(providerId)).join(' + ');
+          setHeadingStatus(t('barcode_header_robot_created', {
+            code: best.code,
+            unit: purchaseUnitName,
+            amount: fmt(amount, amount % 1 === 0 ? 0 : 3),
+            providers,
+          }), 'success');
+          shouldReload = true;
         } catch (error) {
           const msg = clean(error && error.message ? error.message : String(error));
-          if (!useFallbackChain && isLookupNotFoundMessage(msg)) {
-            canRetryHeaderRobot = true;
-          }
           finalError = msg || t('focus_unknown_error');
           setHeadingStatus(
             t('barcode_header_robot_api_error', { msg: finalError }),
@@ -27960,21 +28029,19 @@
           const detailLines = [
             `${langText('Produit', 'Product')}: ${productName}`,
             `${langText('ID produit', 'Product ID')}: ${productId}`,
-            `${langText('Mode', 'Mode')}: ${useFallbackChain ? langText('Relance simplifiée', 'Simplified retry') : langText('Standard', 'Standard')}`,
+            `${langText('Mode', 'Mode')}: ${langText('Recherche avancée auto', 'Automatic advanced lookup')}`,
             `${langText('Unité appliquée', 'Applied unit')}: ${purchaseUnitName} (#${purchaseUnitId})`,
             `${langText('Nom simplifié', 'Simplified name')}: ${usedName || t('default_na')}`,
             `${langText('Code trouvé', 'Found barcode')}: ${bestCode || t('default_na')}`,
             `${langText('Nom source', 'Source name')}: ${bestName || t('default_na')}`,
+            `${langText('Marque', 'Brand')}: ${bestBrand || t('default_na')}`,
+            `${langText('Poids/quantité', 'Weight/quantity')}: ${bestQuantity || t('default_na')}`,
             `${langText('Source', 'Source')}: ${sourceProviderLabel || t('default_na')}`,
             `${langText('Lien source', 'Source link')}: ${sourceUrl || t('default_na')}`,
             `${langText('Quantité prévue', 'Planned amount')}: ${createdAmount > 0 ? fmt(createdAmount, createdAmount % 1 === 0 ? 0 : 3) : t('default_na')}`,
             `${langText('Fournisseurs configurés', 'Configured providers')}: ${configuredProviderOrder.map((id) => barcodeLookupProviderLabel(id)).join(' -> ') || t('default_na')}`,
             `${langText('Fournisseurs tentés', 'Attempted providers')}: ${(attemptedProviders.map((id) => barcodeLookupProviderLabel(id)).join(' -> ') || t('default_na'))}`,
-            `${langText('Résultat', 'Result')}: ${shouldReload
-              ? langText('Créé', 'Created')
-              : awaitingConfirmation
-                ? langText('En attente de clic fiche', 'Waiting for product card click')
-                : langText('Échec', 'Failed')}`,
+            `${langText('Résultat', 'Result')}: ${shouldReload ? langText('Créé', 'Created') : langText('Échec', 'Failed')}`,
           ];
           if (finalError) {
             detailLines.push(`${langText('Erreur finale', 'Final error')}: ${finalError}`);
@@ -28007,7 +28074,7 @@
     if (robotButton.dataset.factsBound !== '1') {
       robotButton.dataset.factsBound = '1';
       robotButton.addEventListener('click', async () => {
-        runHeaderRobotCreate(false);
+        runHeaderRobotCreate(true);
       });
     }
     if (robotRetryButton.dataset.factsBound !== '1') {
@@ -28042,6 +28109,16 @@
   function offBarcodeCandidateName(product) {
     if (!product || typeof product !== 'object') return '';
     return pickFirstString(product, ['product_name_fr', 'product_name_en', 'product_name', 'generic_name_fr', 'generic_name_en', 'generic_name']);
+  }
+
+  function offBarcodeCandidateBrand(product) {
+    if (!product || typeof product !== 'object') return '';
+    return pickFirstString(product, ['brands', 'brand_owner', 'brand_owner_imported', 'brands_tags']);
+  }
+
+  function offBarcodeCandidateQuantity(product) {
+    if (!product || typeof product !== 'object') return '';
+    return pickFirstString(product, ['quantity', 'product_quantity', 'serving_size', 'net_weight']);
   }
 
   function offBarcodeCandidateScore(product, queryName) {
@@ -28204,6 +28281,8 @@
     return {
       code,
       name: offBarcodeCandidateName(best),
+      brand: offBarcodeCandidateBrand(best),
+      quantity: offBarcodeCandidateQuantity(best),
       provider: providerId,
       providerLabel,
       productUrl: makeFactsProductUrl(code, providerId),
@@ -28262,7 +28341,7 @@
       button.disabled = true;
       return;
     }
-    button.innerHTML = button.dataset.offOriginalHtml || '<i class="fa-solid fa-robot"></i>';
+    button.innerHTML = button.dataset.offOriginalHtml || button.innerHTML || '<i class="fa-solid fa-robot"></i>';
     delete button.dataset.offOriginalHtml;
   }
 
@@ -28572,13 +28651,7 @@
       }
     };
 
-    safeRun('loadBarcodeLookupSettings', () => loadBarcodeLookupSettings());
-    safeRun('loadBarcodeAutofillUiSettings', () => loadBarcodeAutofillUiSettings());
-    safeRun('loadPhotoSearchSettings', () => loadPhotoSearchSettings());
-    safeRun('loadPhotoSearchProgress', () => loadPhotoSearchProgress());
-    safeRun('initProductStatusTerminal', () => initProductStatusTerminal());
-    safeRun('initProductImageSearchButton', () => initProductImageSearchButton());
-    safeRun('initProductOpenFoodFactsEnhancements', () => initProductOpenFoodFactsEnhancements());
+    // Product helper features are now maintained in the dedicated Grocy_Product_Helper addon.
 
     const table = document.getElementById('stock-overview-table');
     if (!table) return;

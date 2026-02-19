@@ -1,35 +1,21 @@
-# StatNerd - Addon Pack (EN)
+# StatNerd Core - Addon Pack (EN)
 
-This directory contains the StatNerd distributable addon pack.
+This pack contains the core line (stats + charts).
+
+Product helper features were split to:
+- https://github.com/Raph563/Grocy_Product_Helper
 
 ## Contents
 
-- `dist/custom_js.html`: frontend payload.
+- `dist/custom_js.html`: core dashboard payload.
 - `scripts/install.*`: local install.
 - `scripts/uninstall.*`: rollback.
-- `scripts/export-from-local.*`: export from local instance.
 - `scripts/update-from-github.*`: update from GitHub releases.
 - `docker-sidecar/`: Docker sidecar option.
-- `StatNerd_Update_Relay`: https://github.com/Raph563/StatNerd_Update_Relay (desktop relay app, one-click updates).
 
-## Local install (generic)
-
-Windows:
+## Local install
 
 ```powershell
 cd addon\scripts
 .\install.ps1 -GrocyConfigPath "C:\path\to\grocy\config"
 ```
-
-Linux/macOS:
-
-```bash
-cd addon/scripts
-./install.sh /path/to/grocy/config
-```
-
-## Links
-
-- EN docs overview: `../docs/README.en.md`
-- EN beginner guide: `../docs/NOOB_GUIDE.en.md`
-- FR version: `README.fr.md`
