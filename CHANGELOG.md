@@ -8,6 +8,12 @@ The format follows Keep a Changelog and semantic versioning.
 
 - No entries yet.
 
+## [2.0.0] - 2026-02-19
+
+### Changed
+- Major release line updated to `2.0.0`.
+- Product edit barcode robot now uses a confirmation step: it first shows the OFF/OPF product card, then creates the barcode only after an explicit click on that card.
+
 ## [1.2.1-alpha.19] - 2026-02-15
 
 ### Added

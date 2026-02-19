@@ -713,7 +713,7 @@
   const UI_STATE_STORAGE_KEY = 'grocy_dash_ui_state_v1';
   const ADDON_COMPATIBILITY_KEY = 'grocy_dash_addon_compatibility_v1';
   const ADDON_UPDATE_KEY = 'grocy_dash_addon_update_v1';
-  const ADDON_RUNTIME_VERSION = '1.2.1-alpha.19';
+  const ADDON_RUNTIME_VERSION = '2.0.0';
   const ADDON_UPDATE_DEFAULT_REPOSITORY = 'Raph563/Grocy';
   const BARCODE_LOOKUP_PROVIDER_IDS = ['openfoodfacts', 'openproductsfacts'];
   const PHOTO_SEARCH_ENGINE_IDS = ['google', 'duckduckgo', 'bing'];
@@ -26007,7 +26007,7 @@
       throw new Error(t('facts_provider_disabled'));
     }
     const lookup = await fetchBarcodeLookupProductsByNameWithFallback(productName, settings);
-    const best = bestBarcodeLookupMatch(lookup.products, productName);
+    const best = bestBarcodeLookupMatch(lookup.products, productName, lookup.provider);
     if (!best) {
       const attempted = Array.isArray(lookup.attemptedProviders) && lookup.attemptedProviders.length > 0
         ? lookup.attemptedProviders.map((providerId) => barcodeLookupProviderLabel(providerId)).join(' -> ')
@@ -26159,19 +26159,86 @@
       setBarcodeAutofillStatus(headingStatus, text, tone, detailsInput);
     };
 
+    let headingRobotCard = titleWrap.querySelector('#grocy-barcode-header-robot-card');
+    if (!headingRobotCard) {
+      headingRobotCard = document.createElement('div');
+      headingRobotCard.id = 'grocy-barcode-header-robot-card';
+      headingRobotCard.className = 'mt-2 d-none';
+      titleWrap.appendChild(headingRobotCard);
+    }
+
+    let pendingHeaderRobotSelection = null;
+    const clearPendingHeaderRobotSelection = (keepStatus = false) => {
+      pendingHeaderRobotSelection = null;
+      headingRobotCard.innerHTML = '';
+      headingRobotCard.classList.add('d-none');
+      if (!keepStatus) {
+        setHeadingStatus('', 'muted');
+      }
+    };
+
+    const renderPendingHeaderRobotSelection = (selectionInput = null) => {
+      const selection = selectionInput && typeof selectionInput === 'object' ? selectionInput : null;
+      if (!selection || !selection.code) {
+        clearPendingHeaderRobotSelection(true);
+        return;
+      }
+      pendingHeaderRobotSelection = selection;
+      const productName = clean(selection.name || '') || langText('Produit API', 'API product');
+      const code = clean(selection.code || '');
+      const providerLabel = clean(selection.providerLabel || '') || t('default_na');
+      const sourceUrl = clean(selection.sourceUrl || '');
+      const imageUrl = /^https?:\/\//i.test(clean(selection.imageUrl || '')) ? clean(selection.imageUrl || '') : '';
+      const sourceName = clean(selection.sourceDisplayName || '') || t('default_na');
+      const previewImageHtml = imageUrl
+        ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(productName)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,.08);">`
+        : `<div class="d-inline-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:8px;border:1px dashed rgba(0,0,0,.2);font-size:11px;line-height:1;color:#6c757d;">${escapeHtml(providerLabel)}</div>`;
+      headingRobotCard.innerHTML = `
+        <button
+          type="button"
+          class="btn btn-outline-info btn-sm w-100 text-left d-flex align-items-center"
+          data-facts-robot-confirm="1"
+          title="${escapeHtml(langText('Cliquer pour confirmer cette fiche et créer le code-barres', 'Click to confirm this product card and create barcode'))}"
+          aria-label="${escapeHtml(langText('Confirmer la fiche produit', 'Confirm product card'))}"
+        >
+          <span class="mr-2">${previewImageHtml}</span>
+          <span class="d-flex flex-column align-items-start">
+            <span class="small text-muted">${escapeHtml(`${providerLabel} - ${sourceName}`)}</span>
+            <span class="font-weight-bold">${escapeHtml(productName)}</span>
+            <span class="small">${escapeHtml(langText('Code-barres', 'Barcode'))}: ${escapeHtml(code)}</span>
+            <span class="small text-primary">${escapeHtml(langText('Clique cette fiche pour valider la création du code-barres', 'Click this product card to confirm barcode creation'))}</span>
+          </span>
+        </button>
+        <div class="mt-1">
+          ${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(langText('Ouvrir la fiche source', 'Open source product page'))}</a>` : ''}
+        </div>
+      `;
+      headingRobotCard.classList.remove('d-none');
+    };
+
     let canRetryHeaderRobot = false;
     const refreshState = () => {
       const parentMode = isProductParentModeEnabled();
       const hasBarcodeTable = !!document.getElementById('barcode-table');
-      const hasName = productNameFromMainForm() !== '';
+      const currentName = productNameFromMainForm();
+      const hasName = currentName !== '';
       const settings = normalizeBarcodeLookupSettings(barcodeLookupSettings());
       const productId = currentEditedProductId();
       const purchaseUnitId = currentProductPurchaseUnitId();
 
       actions.classList.toggle('d-none', parentMode || !hasBarcodeTable);
       if (parentMode || !hasBarcodeTable) {
-        setHeadingStatus('', 'muted');
+        clearPendingHeaderRobotSelection();
         return;
+      }
+
+      if (pendingHeaderRobotSelection) {
+        const isStaleSelection = num(pendingHeaderRobotSelection.productId) !== productId
+          || num(pendingHeaderRobotSelection.purchaseUnitId) !== purchaseUnitId
+          || clean(pendingHeaderRobotSelection.productName || '') !== currentName;
+        if (isStaleSelection) {
+          clearPendingHeaderRobotSelection();
+        }
       }
 
       applyFactsIconToButton(offButton, 'openfoodfacts', 'OFF');
@@ -26239,6 +26306,130 @@
       });
     }
 
+    const runHeaderRobotConfirmSelection = async () => {
+      const selection = pendingHeaderRobotSelection && typeof pendingHeaderRobotSelection === 'object'
+        ? pendingHeaderRobotSelection
+        : null;
+      if (!selection || !selection.code) return;
+      if (isProductParentModeEnabled()) {
+        setHeadingStatus(langText('Mode parent actif: section code-barres masquée.', 'Parent mode active: barcode section hidden.'), 'warning');
+        clearPendingHeaderRobotSelection(true);
+        refreshState();
+        return;
+      }
+      const productId = currentEditedProductId();
+      const purchaseUnitId = currentProductPurchaseUnitId();
+      if (num(selection.productId) !== productId || num(selection.purchaseUnitId) !== purchaseUnitId) {
+        setHeadingStatus(langText('La fiche sélectionnée est obsolète. Relance la recherche robot.', 'Selected product card is outdated. Run robot search again.'), 'warning');
+        clearPendingHeaderRobotSelection(true);
+        refreshState();
+        return;
+      }
+      if (currentBarcodeAlreadyExists(selection.code)) {
+        setHeadingStatus(t('barcode_header_robot_exists', { code: selection.code }), 'danger');
+        clearPendingHeaderRobotSelection(true);
+        refreshState();
+        return;
+      }
+
+      setButtonBusy(robotButton, true);
+      setButtonBusy(robotRetryButton, true);
+      const cardButton = headingRobotCard.querySelector('[data-facts-robot-confirm="1"]');
+      if (cardButton) cardButton.disabled = true;
+      let shouldReload = false;
+      let finalError = '';
+      try {
+        setHeadingStatus(
+          langText(`3/3 Création ${selection.code}…`, `3/3 Creating ${selection.code}...`),
+          'info',
+          [
+            `${langText('Produit', 'Product')}: ${selection.productName || t('default_na')}`,
+            `${langText('Code trouvé', 'Found barcode')}: ${selection.code}`,
+            `${langText('Unité appliquée', 'Applied unit')}: ${selection.purchaseUnitName} (#${selection.purchaseUnitId})`,
+          ]
+        );
+        await createProductBarcodeViaApi({
+          productId: selection.productId,
+          barcode: selection.code,
+          quId: selection.purchaseUnitId,
+          amount: selection.amount,
+          shoppingLocationId: null,
+        });
+        const providers = (Array.isArray(selection.attemptedProviders) ? selection.attemptedProviders : [])
+          .map((providerId) => barcodeLookupProviderLabel(providerId)).join(' + ');
+        setHeadingStatus(t('barcode_header_robot_created', {
+          code: selection.code,
+          unit: selection.purchaseUnitName,
+          amount: fmt(selection.amount, selection.amount % 1 === 0 ? 0 : 3),
+          providers,
+        }), 'success');
+        clearPendingHeaderRobotSelection(true);
+        shouldReload = true;
+      } catch (error) {
+        finalError = clean(error && error.message ? error.message : String(error)) || t('focus_unknown_error');
+        setHeadingStatus(
+          t('barcode_header_robot_api_error', { msg: finalError }),
+          'danger',
+          [
+            `${langText('Produit', 'Product')}: ${selection.productName || t('default_na')}`,
+            `${langText('Code trouvé', 'Found barcode')}: ${selection.code}`,
+            `${langText('Unité appliquée', 'Applied unit')}: ${selection.purchaseUnitName} (#${selection.purchaseUnitId})`,
+            `${langText('Erreur', 'Error')}: ${finalError}`,
+          ]
+        );
+      } finally {
+        const detailLines = [
+          `${langText('Produit', 'Product')}: ${selection.productName || t('default_na')}`,
+          `${langText('ID produit', 'Product ID')}: ${selection.productId}`,
+          `${langText('Code trouvé', 'Found barcode')}: ${selection.code}`,
+          `${langText('Nom source', 'Source name')}: ${selection.name || t('default_na')}`,
+          `${langText('Source', 'Source')}: ${selection.providerLabel || t('default_na')}`,
+          `${langText('Lien source', 'Source link')}: ${selection.sourceUrl || t('default_na')}`,
+          `${langText('Quantité créée', 'Created amount')}: ${fmt(selection.amount, selection.amount % 1 === 0 ? 0 : 3)}`,
+          `${langText('Résultat', 'Result')}: ${shouldReload ? langText('Créé', 'Created') : langText('Échec', 'Failed')}`,
+        ];
+        if (finalError) {
+          detailLines.push(`${langText('Erreur finale', 'Final error')}: ${finalError}`);
+        }
+        pushProductStatusTerminal(
+          langText('Données robot code-barres', 'Barcode robot data'),
+          'data',
+          langText('Code-barres', 'Barcodes'),
+          detailLines
+        );
+
+        if (shouldReload) {
+          S.productStatusTerminalExpanded = true;
+          S.productStatusTerminalUnseen = 0;
+          saveProductStatusTerminalSettings();
+          saveProductStatusTerminalSession({
+            expanded: true,
+            reason: 'barcode-robot-reload',
+          });
+          setTimeout(() => {
+            window.location.reload();
+          }, 450);
+          return;
+        }
+        if (cardButton) cardButton.disabled = false;
+        setButtonBusy(robotButton, false);
+        setButtonBusy(robotRetryButton, false);
+        refreshState();
+      }
+    };
+
+    if (headingRobotCard.dataset.factsBound !== '1') {
+      headingRobotCard.dataset.factsBound = '1';
+      headingRobotCard.addEventListener('click', (event) => {
+        const trigger = event.target && event.target.closest
+          ? event.target.closest('[data-facts-robot-confirm="1"]')
+          : null;
+        if (!trigger) return;
+        event.preventDefault();
+        runHeaderRobotConfirmSelection();
+      });
+    }
+
     const runHeaderRobotCreate = async (useFallbackChain = false) => {
         if (isProductParentModeEnabled()) {
           setHeadingStatus(langText('Mode parent actif: section code-barres masquée.', 'Parent mode active: barcode section hidden.'), 'warning');
@@ -26276,13 +26467,19 @@
 
         const configuredProviderOrder = barcodeLookupProviderOrder(settings);
         let shouldReload = false;
+        let awaitingConfirmation = false;
         let finalError = '';
         let usedName = '';
         let bestName = '';
         let bestCode = '';
         let createdAmount = 0;
         let attemptedProviders = [];
+        let sourceProviderLabel = '';
+        let sourceProviderId = '';
+        let sourceUrl = '';
+        let sourceImageUrl = '';
         canRetryHeaderRobot = false;
+        clearPendingHeaderRobotSelection(true);
         setButtonBusy(robotButton, true);
         if (useFallbackChain) setButtonBusy(robotRetryButton, true);
         setHeadingStatus(
@@ -26306,39 +26503,45 @@
           attemptedProviders = Array.isArray(lookup.attemptedProviders) && lookup.attemptedProviders.length > 0
             ? lookup.attemptedProviders
             : [];
+          sourceProviderId = normalizeBarcodeLookupProvider(best?.provider || lookup?.lookup?.provider || lookup?.provider || settings.provider);
+          sourceProviderLabel = clean(best?.providerLabel || barcodeLookupProviderLabel(sourceProviderId));
+          sourceUrl = clean(best?.productUrl || makeFactsProductUrl(best.code, sourceProviderId));
+          sourceImageUrl = clean(best?.imageUrl || '');
+
           if (currentBarcodeAlreadyExists(best.code)) {
             setHeadingStatus(t('barcode_header_robot_exists', { code: best.code }), 'danger');
             finalError = t('barcode_header_robot_exists', { code: best.code });
             return;
           }
 
+          const amount = currentProductBarcodeDefaultAmount();
+          createdAmount = amount;
+          awaitingConfirmation = true;
+          renderPendingHeaderRobotSelection({
+            productId,
+            productName,
+            purchaseUnitId,
+            purchaseUnitName,
+            amount,
+            code: best.code,
+            name: bestName || langText('produit API', 'API product'),
+            attemptedProviders,
+            providerId: sourceProviderId,
+            providerLabel: sourceProviderLabel,
+            sourceDisplayName: sourceProviderId === 'openproductsfacts' ? 'OPF' : 'OFF',
+            sourceUrl,
+            imageUrl: sourceImageUrl,
+          });
           setHeadingStatus(
-            langText(`2/3 Création ${best.code}…`, `2/3 Creating ${best.code}...`),
+            langText('2/3 Fiche OFF/OPF trouvée. Clique sur la fiche pour créer ce code-barres.', '2/3 OFF/OPF product card ready. Click the card to create this barcode.'),
             'info',
             [
               `${langText('Code trouvé', 'Found barcode')}: ${best.code}`,
               `${langText('Nom source', 'Source name')}: ${bestName || t('default_na')}`,
+              `${langText('Source', 'Source')}: ${sourceProviderLabel || t('default_na')}`,
               `${langText('Fournisseurs tentés', 'Attempted providers')}: ${(attemptedProviders.map((id) => barcodeLookupProviderLabel(id)).join(' -> ') || t('default_na'))}`,
             ]
           );
-          const amount = currentProductBarcodeDefaultAmount();
-          createdAmount = amount;
-          await createProductBarcodeViaApi({
-            productId,
-            barcode: best.code,
-            quId: purchaseUnitId,
-            amount,
-            shoppingLocationId: null,
-          });
-          const providers = attemptedProviders.map((providerId) => barcodeLookupProviderLabel(providerId)).join(' + ');
-          setHeadingStatus(t('barcode_header_robot_created', {
-            code: best.code,
-            unit: purchaseUnitName,
-            amount: fmt(amount, amount % 1 === 0 ? 0 : 3),
-            providers,
-          }), 'success');
-          setHeadingStatus(langText('3/3 Code-barres créé. Rechargement…', '3/3 Barcode created. Reloading...'), 'success');
-          shouldReload = true;
         } catch (error) {
           const msg = clean(error && error.message ? error.message : String(error));
           if (!useFallbackChain && isLookupNotFoundMessage(msg)) {
@@ -26363,10 +26566,16 @@
             `${langText('Nom simplifié', 'Simplified name')}: ${usedName || t('default_na')}`,
             `${langText('Code trouvé', 'Found barcode')}: ${bestCode || t('default_na')}`,
             `${langText('Nom source', 'Source name')}: ${bestName || t('default_na')}`,
-            `${langText('Quantité créée', 'Created amount')}: ${createdAmount > 0 ? fmt(createdAmount, createdAmount % 1 === 0 ? 0 : 3) : t('default_na')}`,
+            `${langText('Source', 'Source')}: ${sourceProviderLabel || t('default_na')}`,
+            `${langText('Lien source', 'Source link')}: ${sourceUrl || t('default_na')}`,
+            `${langText('Quantité prévue', 'Planned amount')}: ${createdAmount > 0 ? fmt(createdAmount, createdAmount % 1 === 0 ? 0 : 3) : t('default_na')}`,
             `${langText('Fournisseurs configurés', 'Configured providers')}: ${configuredProviderOrder.map((id) => barcodeLookupProviderLabel(id)).join(' -> ') || t('default_na')}`,
             `${langText('Fournisseurs tentés', 'Attempted providers')}: ${(attemptedProviders.map((id) => barcodeLookupProviderLabel(id)).join(' -> ') || t('default_na'))}`,
-            `${langText('Résultat', 'Result')}: ${shouldReload ? langText('Créé', 'Created') : langText('Échec', 'Failed')}`,
+            `${langText('Résultat', 'Result')}: ${shouldReload
+              ? langText('Créé', 'Created')
+              : awaitingConfirmation
+                ? langText('En attente de clic fiche', 'Waiting for product card click')
+                : langText('Échec', 'Failed')}`,
           ];
           if (finalError) {
             detailLines.push(`${langText('Erreur finale', 'Final error')}: ${finalError}`);
@@ -26577,7 +26786,7 @@
     };
   }
 
-  function bestBarcodeLookupMatch(products, productName) {
+  function bestBarcodeLookupMatch(products, productName, providerIdInput = '') {
     if (!Array.isArray(products) || products.length === 0) return null;
     let best = null;
     let bestScore = -Infinity;
@@ -26591,9 +26800,16 @@
     if (!best || bestScore < 18) return null;
     const code = offBarcodeCandidateCode(best);
     if (!code) return null;
+    const providerId = normalizeBarcodeLookupProvider(providerIdInput || barcodeLookupProviderFromSettings());
+    const providerLabel = barcodeLookupProviderLabel(providerId);
     return {
       code,
       name: offBarcodeCandidateName(best),
+      provider: providerId,
+      providerLabel,
+      productUrl: makeFactsProductUrl(code, providerId),
+      imageUrl: extractFactsImageUrl(best, providerId),
+      raw: best,
     };
   }
 
@@ -26788,7 +27004,7 @@
           : [];
         const best = useFallbackChain
           ? lookup.best
-          : bestBarcodeLookupMatch(lookup.products, productName);
+          : bestBarcodeLookupMatch(lookup.products, productName, lookup.provider);
         usedName = clean(lookup.usedName || '');
         if (!best) {
           const attempted = Array.isArray(lookup.attemptedProviders) && lookup.attemptedProviders.length > 0
