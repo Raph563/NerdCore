@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.1] - 2026-02-20
+
+- Fixed legacy-hide behavior on addon settings pages:
+  - keeps `#dash_ai_settings_overlay` visible on `/stocksettings?statnerd=1` and `/stocksettings?producthelper=1`;
+  - still hides legacy overlay on other pages when "hide legacy addon settings UI" is enabled.
+
 ## [4.0.0] - 2026-02-19
 
 - Added native Grocy settings menu entries for:

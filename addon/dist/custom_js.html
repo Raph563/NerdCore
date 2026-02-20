@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const CORE_VERSION = '4.0.0';
+  const CORE_VERSION = '4.0.1';
   const STORAGE_KEY = 'grocy_nerdcore_settings_v1';
   const TOKEN_STORAGE_KEY = 'grocy_nerdcore_update_token_v1';
   const UPDATE_API_PATH = '/__nerdcore_update';
@@ -287,14 +287,16 @@
       return;
     }
     if (existing) return;
+    const section = currentSettingsSection();
+    const keepOverlayVisible = section === 'statnerd' || section === 'producthelper';
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
       #dash_ai_settings_open,
-      #dash_focus_ai_settings,
-      #dash_ai_settings_overlay {
+      #dash_focus_ai_settings {
         display: none !important;
       }
+      ${keepOverlayVisible ? '' : '#dash_ai_settings_overlay { display: none !important; }'}
     `;
     document.head.appendChild(style);
   }
